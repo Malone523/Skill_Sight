@@ -67,11 +67,14 @@ export default function EmployeeInterview() {
       if (error) throw error;
 
       const aiMsg: Message = { role: "ai", content: data.message, timestamp: new Date() };
+      const questionDelta = typeof data.questionDelta === "number" ? data.questionDelta : 1;
+      const nextQuestionsAsked = questionsAsked + questionDelta;
+
       setMessages(prev => [...prev, aiMsg]);
-      setQuestionsAsked(prev => prev + 1);
+      setQuestionsAsked(nextQuestionsAsked);
 
       if (data.isComplete && data.extractedData) {
-        await handleInterviewComplete(data.extractedData, [...newMessages, aiMsg]);
+        await handleInterviewComplete(data.extractedData, [...newMessages, aiMsg], nextQuestionsAsked);
       } else if (data.extractedData?.extracted_skills) {
         updateDiscoveredSkills(data.extractedData.extracted_skills);
       }
@@ -81,7 +84,7 @@ export default function EmployeeInterview() {
     } finally {
       setIsAiTyping(false);
     }
-  }, [employee, selectedRole, messages]);
+  }, [employee, selectedRole, messages, questionsAsked]);
 
   const updateDiscoveredSkills = (skills: Record<string, any>) => {
     const newSkills = Object.entries(skills).map(([name, data]: [string, any]) => ({
@@ -95,15 +98,14 @@ export default function EmployeeInterview() {
 
   const pipeline = usePipeline();
 
-  const handleInterviewComplete = async (extractedData: any, finalMessages: Message[]) => {
-    // Save interview to DB
+  const handleInterviewComplete = async (extractedData: any, finalMessages: Message[], finalQuestionCount: number) => {
     const { data: interview } = await supabase.from("interviews").insert({
       employee_id: id,
       target_role_id: selectedRoleId,
       interview_type: "employee",
       status: "completed",
       conversation_history: finalMessages.map(m => ({ role: m.role, content: m.content, timestamp: m.timestamp.toISOString() })) as any,
-      questions_asked: questionsAsked,
+      questions_asked: finalQuestionCount,
       extracted_skills: extractedData.extracted_skills || {} as any,
       unexpected_skills: extractedData.unexpected_skills || [] as any,
       insufficient_evidence: extractedData.insufficient_evidence || [] as any,
@@ -260,7 +262,7 @@ export default function EmployeeInterview() {
               )}
             </div>
 
-            <button onClick={() => { if (confirm("End interview early? Current progress will be saved.")) handleInterviewComplete({ extracted_skills: {} }, messages); }} className="text-xs text-muted-foreground hover:text-foreground">
+            <button onClick={() => { if (confirm("End interview early? Current progress will be saved.")) handleInterviewComplete({ extracted_skills: {} }, messages, questionsAsked); }} className="text-xs text-muted-foreground hover:text-foreground">
               End Interview Early
             </button>
           </>
