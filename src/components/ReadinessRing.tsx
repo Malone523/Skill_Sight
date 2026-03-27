@@ -52,16 +52,12 @@ export function ReadinessRing({ value, size = "md", label }: ReadinessRingProps)
         />
       </svg>
       <span
-        className="absolute font-mono font-semibold"
-        style={{
-          fontSize: config.fontSize,
-          lineHeight: `${config.total}px`,
-          width: config.total,
-          textAlign: "center",
-        }}
+        className="absolute inset-0 flex items-center justify-center font-mono font-semibold"
+        style={{ fontSize: config.fontSize }}
       >
         {value}%
       </span>
+      </div>
       {label && size !== "sm" && (
         <span className="text-[11px] text-muted-foreground mt-0.5">{label}</span>
       )}
