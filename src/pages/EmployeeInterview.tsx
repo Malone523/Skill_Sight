@@ -60,6 +60,7 @@ export default function EmployeeInterview() {
           employeeTitle: employee.job_title,
           roleName: selectedRole.title,
           targetSkills,
+          presetPack: null,
         },
       });
 
