@@ -120,6 +120,12 @@ ${managerInsights ? `MANAGER INSIGHTS:\n${JSON.stringify(managerInsights, null, 
       }),
     });
 
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error("AI API error:", response.status, errText);
+      throw new Error(`AI API returned ${response.status}: ${errText.substring(0, 200)}`);
+    }
+
     const rawText = await response.text();
     
     // Robust JSON parsing - handle markdown fences or malformed responses
