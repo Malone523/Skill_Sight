@@ -7,10 +7,14 @@ import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 import { useEmployee, useEmployeeSkills, useAlgorithmResults, useInterviews, useRoles } from "@/hooks/useData";
+import { useInvitations } from "@/hooks/useInvitations";
+import { InviteInterviewModal } from "@/components/InviteInterviewModal";
 import { supabase } from "@/integrations/supabase/client";
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer, Legend } from "recharts";
-import { Check, Clock, AlertCircle, Sparkles, ChevronRight, Users, BarChart3 } from "lucide-react";
+import { Check, Clock, AlertCircle, Sparkles, ChevronRight, Users, BarChart3, Mail, XCircle } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
+import { PRESET_PACKS } from "@/lib/presetPacks";
+import { toast } from "@/hooks/use-toast";
 
 export default function EmployeeProfile() {
   const { id } = useParams();
