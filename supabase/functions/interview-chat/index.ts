@@ -499,7 +499,7 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ message: messageText, isComplete, extractedData, questionDelta }),
+      JSON.stringify({ message: messageText, isComplete, extractedData, questionDelta: effectiveQuestionDelta }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
