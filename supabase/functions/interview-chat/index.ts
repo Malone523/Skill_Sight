@@ -383,6 +383,18 @@ serve(async (req) => {
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
+
+      if (shouldForceAdvance) {
+        return new Response(
+          JSON.stringify({
+            message: buildForcedAdvanceReply(interviewType, targetSkills || [], typedMessages),
+            isComplete: false,
+            extractedData: null,
+            questionDelta: 1,
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
     let systemPrompt: string;
