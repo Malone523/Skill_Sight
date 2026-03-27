@@ -1,0 +1,2 @@
+CREATE UNIQUE INDEX IF NOT EXISTS algorithm_results_employee_role_unique ON public.algorithm_results (employee_id, role_id);
+CREATE UNIQUE INDEX IF NOT EXISTS reports_employee_role_unique ON public.reports (employee_id, role_id);
