@@ -154,6 +154,9 @@ export default function ManagerInterview() {
     }
   };
 
+  if (!id) {
+    return <EmployeeSelector title="Manager Interview" subtitle="Select an employee to discuss" navigateTo="/interview/manager" />;
+  }
   if (isLoading) return <div className="min-h-screen flex items-center justify-center"><LoadingSpinner /></div>;
   if (!employee) return <div className="min-h-screen flex items-center justify-center"><p>Employee not found</p></div>;
 
