@@ -23,6 +23,25 @@ export default function EmployeeProfile() {
   const { data: roles } = useRoles();
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
 
+  // Realtime: re-fetch when interviews update for this employee
+  useEffect(() => {
+    if (!id) return;
+    const channel = supabase
+      .channel(`interview-updates-${id}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'interviews',
+        filter: `employee_id=eq.${id}`,
+      }, () => {
+        // Refetch all related data
+        window.location.reload();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [id]);
+
   const latestResult = results?.[0];
   const readiness = latestResult ? Math.round((latestResult.final_readiness || 0) * 100) : null;
   const empInterviews = interviews?.filter(i => i.employee_id === id) || [];
