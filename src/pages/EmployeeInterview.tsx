@@ -262,7 +262,7 @@ export default function EmployeeInterview() {
               )}
             </div>
 
-            <button onClick={() => { if (confirm("End interview early? Current progress will be saved.")) handleInterviewComplete({ extracted_skills: {} }, messages); }} className="text-xs text-muted-foreground hover:text-foreground">
+            <button onClick={() => { if (confirm("End interview early? Current progress will be saved.")) handleInterviewComplete({ extracted_skills: {} }, messages, questionsAsked); }} className="text-xs text-muted-foreground hover:text-foreground">
               End Interview Early
             </button>
           </>
