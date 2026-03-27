@@ -25,7 +25,12 @@ export default function EmployeeProfile() {
   const { data: interviews } = useInterviews(id);
   
   const { data: roles } = useRoles();
+  const { data: invitations, refetch: refetchInvitations } = useInvitations(id);
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
+  const [inviteModalOpen, setInviteModalOpen] = useState(false);
+
+  const pendingInvite = invitations?.find(i => i.status === 'pending');
+  const acceptedInvite = invitations?.find(i => i.status === 'accepted' || i.status === 'in_progress');
 
   useEffect(() => {
     if (!id) return;
