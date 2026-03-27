@@ -134,7 +134,7 @@ export default function MyInterview() {
       .eq("id", activeInterview.id);
 
     // Merge skills
-    if (extractedData.extracted_skills) {
+    if (extractedData?.extracted_skills) {
       for (const [skillName, skillData] of Object.entries(extractedData.extracted_skills) as [string, any][]) {
         await supabase.from("employee_skills").upsert(
           {
