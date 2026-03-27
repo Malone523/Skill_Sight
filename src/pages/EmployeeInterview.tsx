@@ -162,6 +162,9 @@ export default function EmployeeInterview() {
     }
   };
 
+  if (!id) {
+    return <EmployeeSelector title="Employee Interview" subtitle="Select an employee to interview" navigateTo="/interview/employee" />;
+  }
   if (isLoading) return <div className="min-h-screen flex items-center justify-center"><LoadingSpinner /></div>;
   if (!employee) return <div className="min-h-screen flex items-center justify-center"><p>Employee not found</p></div>;
 
