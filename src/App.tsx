@@ -12,7 +12,7 @@ import EmployeeProfile from "./pages/EmployeeProfile";
 import EmployeeInterview from "./pages/EmployeeInterview";
 import ManagerInterview from "./pages/ManagerInterview";
 import AnalysisPage from "./pages/AnalysisPage";
-import BootcampPage from "./pages/BootcampPage";
+
 import StrategyHub from "./pages/StrategyHub";
 import InternalReorg from "./pages/InternalReorg";
 import SuccessionBoard from "./pages/SuccessionBoard";
@@ -37,8 +37,6 @@ const App = () => (
             <Route path="/employees/:id" element={<AppLayout><EmployeeProfile /></AppLayout>} />
             <Route path="/analysis" element={<AppLayout><AnalysisPage /></AppLayout>} />
             <Route path="/analysis/:id" element={<AppLayout><AnalysisPage /></AppLayout>} />
-            <Route path="/bootcamp" element={<AppLayout><BootcampPage /></AppLayout>} />
-            <Route path="/bootcamp/:id" element={<AppLayout><BootcampPage /></AppLayout>} />
             <Route path="/strategy" element={<AppLayout><StrategyHub /></AppLayout>} />
             <Route path="/reorg" element={<AppLayout><InternalReorg /></AppLayout>} />
             <Route path="/succession" element={<AppLayout><SuccessionBoard /></AppLayout>} />

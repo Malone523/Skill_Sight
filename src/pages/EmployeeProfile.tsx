@@ -6,7 +6,7 @@ import { PriorityBadge } from "@/components/PriorityBadge";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
-import { useEmployee, useEmployeeSkills, useAlgorithmResults, useInterviews, useBootcamps, useRoles } from "@/hooks/useData";
+import { useEmployee, useEmployeeSkills, useAlgorithmResults, useInterviews, useRoles } from "@/hooks/useData";
 import { supabase } from "@/integrations/supabase/client";
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer, Legend } from "recharts";
 import { Check, Clock, AlertCircle, Sparkles, ChevronRight, Users, BarChart3 } from "lucide-react";
@@ -19,7 +19,7 @@ export default function EmployeeProfile() {
   const { data: skills } = useEmployeeSkills(id);
   const { data: results } = useAlgorithmResults(id);
   const { data: interviews } = useInterviews(id);
-  const { data: bootcamps } = useBootcamps(id);
+  
   const { data: roles } = useRoles();
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
 
@@ -43,7 +43,7 @@ export default function EmployeeProfile() {
   const latestResult = results?.[0];
   const readiness = latestResult ? Math.round((latestResult.final_readiness || 0) * 100) : null;
   const empInterviews = interviews?.filter(i => i.employee_id === id) || [];
-  const empBootcamps = bootcamps?.filter(b => b.employee_id === id) || [];
+  
   const completedEmployee = empInterviews.some(i => i.interview_type === 'employee' && i.status === 'completed');
   const completedManager = empInterviews.some(i => i.interview_type === 'manager' && i.status === 'completed');
 
@@ -75,7 +75,6 @@ export default function EmployeeProfile() {
     { name: 'Employee Interview', done: completedEmployee, inProgress: empInterviews.some(i => i.interview_type === 'employee' && i.status === 'in_progress'), icon: completedEmployee ? Check : Clock },
     { name: 'Manager Interview', done: completedManager, inProgress: empInterviews.some(i => i.interview_type === 'manager' && i.status === 'in_progress'), icon: completedManager ? Check : Clock },
     { name: 'Algorithm Analysis', done: !!latestResult, icon: latestResult ? Check : AlertCircle },
-    { name: 'AI Bootcamp', done: empBootcamps.length > 0, icon: empBootcamps.length > 0 ? Check : AlertCircle },
   ];
 
   return (
@@ -108,7 +107,7 @@ export default function EmployeeProfile() {
             <Button size="sm" onClick={() => navigate(`/interview/employee/${id}`)}>Start Employee Interview</Button>
             <Button size="sm" variant="outline" onClick={() => navigate(`/interview/manager/${id}`)}>Start Manager Interview</Button>
             {latestResult && <Button size="sm" variant="outline" onClick={() => navigate(`/analysis/${id}`)}>View Analysis</Button>}
-            {empBootcamps.length > 0 && <Button size="sm" variant="outline" onClick={() => navigate(`/bootcamp/${id}`)}>View Bootcamp</Button>}
+            
           </div>
         </div>
 
