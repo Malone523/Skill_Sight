@@ -82,6 +82,68 @@ TONE: Safe space for honest feedback. Never formal review feel.
 OUTPUT: After Q10 OR all areas covered — send thank-you then JSON on new line:
 {"interview_completed":true,"questions_asked":0,"manager_assessment":{"observed_skills":{"SkillName":{"proficiency":1,"evidence":"what manager described"}},"potential_indicators":["indicator"],"concerns":["concern"],"learning_agility_observed":0.0,"leadership_potential_observed":0.0,"manager_confidence_score":0.0,"hidden_role_suggestion":"role name"}}`;
 
+const PRESET_BLOCKS: Record<string, string> = {
+  technical_depth: `INTERVIEW FOCUS: Technical Depth Explorer
+Starting ideas (not a script — adapt freely based on answers):
+- Ask about the most technically complex thing they've built or solved
+- Explore what tools, languages, or systems they've worked with hands-on
+- Probe for depth: what happens when they get stuck on a technical problem?
+- Ask about something they figured out on their own with no guidance
+- Explore if they've ever taught or documented a technical skill for others
+- Look for evidence of going beyond their job description technically
+Key signals to listen for: self-directed learning, debugging instinct, systems thinking, tool mastery`,
+
+  hidden_potential: `INTERVIEW FOCUS: Hidden Potential Finder
+Starting ideas (not a script — adapt freely based on answers):
+- Ask what they do outside their official responsibilities that they enjoy
+- Explore side projects, personal initiatives, or things they built without being asked
+- Ask if there's a problem at BMW they've thought about solving but nobody asked them to
+- Probe for moments where they stepped up unexpectedly
+- Explore what they'd do if they could redesign part of their team or process
+- Ask what skills they have that BMW doesn't currently use
+Key signals to listen for: initiative, self-motivation, cross-boundary thinking, untapped skills`,
+
+  leadership_signals: `INTERVIEW FOCUS: Leadership Signals
+Starting ideas (not a script — adapt freely based on answers):
+- Ask about a time they influenced a decision without having formal authority
+- Explore moments where they helped a colleague or junior team member
+- Ask about a project where they had to coordinate people across teams
+- Probe for how they handle disagreement with peers or managers
+- Ask what they do when a project is going wrong and they're not in charge
+- Explore if they've ever started something that others adopted
+Key signals to listen for: influence without authority, team orientation, accountability taking, vision-setting`,
+
+  ev_transition: `INTERVIEW FOCUS: EV & Neue Klasse Transition
+Starting ideas (not a script — adapt freely based on answers):
+- Ask what they know about BMW's Neue Klasse platform from their day-to-day work
+- Explore any experience with high-voltage systems, battery components, or thermal management
+- Ask if they've worked on anything connected to electrification — even indirectly
+- Probe for self-study or curiosity: have they researched EV technology on their own?
+- Ask how their current engineering skills could apply to an EV context
+- Explore their comfort with learning something technically unfamiliar under time pressure
+Key signals to listen for: EV-adjacent skills, learning orientation, curiosity about electrification, transferable engineering depth`,
+
+  digital_ai: `INTERVIEW FOCUS: Digital & AI Readiness
+Starting ideas (not a script — adapt freely based on answers):
+- Ask if they've worked with any data — even spreadsheets, reports, or simple automation
+- Explore if they've used Python, SQL, or any scripting tools (even basic)
+- Ask about their experience with BMW's digital tools — SAP, digital twin systems, dashboards
+- Probe for comfort with uncertainty and experimentation
+- Ask what digital tools or skills they've picked up in the last 2 years on their own
+- Explore their reaction to BMW's Digital Boost programme
+Key signals to listen for: data curiosity, tool comfort, learning without formal training, openness to AI augmentation`,
+
+  cross_functional: `INTERVIEW FOCUS: Cross-Functional Collaborator
+Starting ideas (not a script — adapt freely based on answers):
+- Ask about a time they worked closely with a team very different from their own
+- Explore how they communicate technical topics to non-technical people
+- Ask about a moment where two teams disagreed and how they navigated it
+- Probe for stakeholder management
+- Ask about a cross-department project — what worked, what didn't, what they learned
+- Explore how they build trust with people who have different priorities
+Key signals to listen for: adaptability, empathy, communication range, political awareness, bridge-building`,
+};
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
@@ -93,7 +155,7 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, interviewType, employeeName, employeeTitle, roleName, targetSkills, managerName } = await req.json();
+    const { messages, interviewType, employeeName, employeeTitle, roleName, targetSkills, managerName, presetPack } = await req.json();
 
     const apiKey = Deno.env.get("LOVABLE_API_KEY");
     if (!apiKey) {
@@ -108,7 +170,12 @@ serve(async (req) => {
       systemPrompt = EMPLOYEE_SYSTEM_PROMPT + `\n\nEmployee: ${employeeName} (${employeeTitle}).\nTarget role: ${roleName}.\nTarget skill areas to probe: ${targetSkills?.join(", ") || "general skills"}`;
     }
 
-    // Build messages for OpenAI-compatible format
+    // Inject preset pack if provided
+    if (presetPack && PRESET_BLOCKS[presetPack]) {
+      systemPrompt += `\n\n${PRESET_BLOCKS[presetPack]}`;
+      systemPrompt += `\n\nIMPORTANT: These are starting INSPIRATIONS only. Do not follow them rigidly. If the employee's answers take the conversation somewhere more interesting and relevant, follow that thread. Always prioritise rich evidence over topic coverage.`;
+    }
+
     const chatMessages = [
       { role: "system", content: systemPrompt },
       ...messages.map((m: any) => ({
@@ -117,7 +184,6 @@ serve(async (req) => {
       })),
     ];
 
-    // If no user messages yet, add a starter
     if (messages.length === 0) {
       chatMessages.push({ role: "user", content: "Hello, I'm ready to begin." });
     }
@@ -152,7 +218,6 @@ serve(async (req) => {
     const data = await response.json();
     const assistantMessage = data.choices?.[0]?.message?.content || "";
 
-    // Try to extract JSON completion data
     let isComplete = false;
     let extractedData = null;
     try {
@@ -165,7 +230,6 @@ serve(async (req) => {
       // No JSON found, interview continues
     }
 
-    // Get the message text (without JSON)
     let messageText = assistantMessage;
     if (isComplete && extractedData) {
       const jsonStart = assistantMessage.indexOf("{");
