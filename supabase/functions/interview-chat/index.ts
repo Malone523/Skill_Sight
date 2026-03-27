@@ -473,8 +473,9 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    const rawAssistantMessage = data.choices?.[0]?.message?.content || "";
-    const questionDelta = parseQuestionDelta(rawAssistantMessage) ?? (typedMessages.length === 0 ? 1 : 0);
+    const parsedQuestionDelta = parseQuestionDelta(rawAssistantMessage);
+    const questionDelta = parsedQuestionDelta ?? (typedMessages.length === 0 ? 1 : 0);
+    const effectiveQuestionDelta = shouldForceAdvance && !parsedQuestionDelta ? 1 : shouldForceAdvance ? Math.max(questionDelta, 1) : questionDelta;
     const assistantMessage = sanitizeAssistantMessage(rawAssistantMessage);
 
     let isComplete = false;
