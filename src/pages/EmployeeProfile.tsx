@@ -113,11 +113,42 @@ export default function EmployeeProfile() {
             </div>
           </div>
           <div className="flex flex-wrap gap-2 mt-4">
-            <Button size="sm" onClick={() => navigate(`/interview/employee/${id}`)}>Start Employee Interview</Button>
+            {pendingInvite ? (
+              <div className="flex items-center gap-3">
+                <Button size="sm" disabled className="bg-status-green/20 text-status-green border-status-green/30">
+                  <Check className="h-3 w-3 mr-1" /> Invitation Sent
+                </Button>
+                <button
+                  onClick={async () => {
+                    if (!confirm("Cancel this invitation?")) return;
+                    await supabase.from("interview_invitations" as any).update({ status: "expired" } as any).eq("id", pendingInvite.id);
+                    await supabase.from("interviews").update({ status: "cancelled" }).eq("id", pendingInvite.interview_id);
+                    refetchInvitations();
+                    toast({ title: "Invitation cancelled" });
+                  }}
+                  className="text-xs text-muted-foreground hover:text-destructive"
+                >Cancel Invite</button>
+              </div>
+            ) : acceptedInvite ? (
+              <Button size="sm" variant="outline" disabled>
+                <Clock className="h-3 w-3 mr-1" /> Interview In Progress
+              </Button>
+            ) : (
+              <Button size="sm" onClick={() => setInviteModalOpen(true)}>
+                <Mail className="h-3 w-3 mr-1" /> Invite to Interview
+              </Button>
+            )}
             <Button size="sm" variant="outline" onClick={() => navigate(`/interview/manager/${id}`)}>Start Manager Interview</Button>
             {latestResult && <Button size="sm" variant="outline" onClick={() => navigate(`/analysis/${id}`)}>View Analysis</Button>}
-            
           </div>
+          {employee && (
+            <InviteInterviewModal
+              open={inviteModalOpen}
+              onOpenChange={setInviteModalOpen}
+              employee={employee}
+              onSent={() => refetchInvitations()}
+            />
+          )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
