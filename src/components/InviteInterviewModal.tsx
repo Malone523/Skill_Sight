@@ -48,7 +48,7 @@ export function InviteInterviewModal({ open, onOpenChange, employee, onSent }: P
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + parseInt(expiresIn));
 
-      const { error: invErr } = await supabase.from("interview_invitations" as any).insert({
+      const invPayload = {
         interview_id: interview.id,
         employee_id: employee.id,
         invited_by_manager: profile?.full_name || "Manager",
@@ -57,7 +57,10 @@ export function InviteInterviewModal({ open, onOpenChange, employee, onSent }: P
         message: message.trim() || null,
         preset_pack: presetPack,
         expires_at: expiresAt.toISOString(),
-      } as any);
+      };
+      
+      const { error: invErr, data: invData } = await supabase.from("interview_invitations" as any).insert(invPayload as any).select();
+      console.log("Invitation insert result:", { invData, invErr, invPayload });
       if (invErr) throw invErr;
 
       toast({ title: "Invitation sent", description: `${employee.name} will see it when they next log in.` });
