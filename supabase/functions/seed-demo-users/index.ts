@@ -113,6 +113,38 @@ serve(async (req) => {
       }
     }
 
+    // Create Employee account (Jens Richter)
+    const jensExists = existing?.some(e => e.email === "jens.richter@bmw.de");
+    if (!jensExists) {
+      const { data: jens } = await supabaseAdmin
+        .from("employees")
+        .select("id")
+        .eq("name", "Jens Richter")
+        .limit(1)
+        .single();
+
+      const { data: jensUser, error: jensErr } = await supabaseAdmin.auth.admin.createUser({
+        email: "jens.richter@bmw.de",
+        password: "SkillSight2026!",
+        email_confirm: true,
+        user_metadata: { full_name: "Jens Richter" },
+      });
+
+      if (jensErr) {
+        console.error("Jens creation error:", jensErr);
+        results.push(`Jens error: ${jensErr.message}`);
+      } else if (jensUser?.user) {
+        await supabaseAdmin.from("user_profiles").insert({
+          id: jensUser.user.id,
+          email: "jens.richter@bmw.de",
+          role: "employee",
+          employee_id: jens?.id || null,
+          full_name: "Jens Richter",
+        });
+        results.push("Employee (Jens) created");
+      }
+    }
+
     return new Response(JSON.stringify({ message: "Seeding complete", results, seeded: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
