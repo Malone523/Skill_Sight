@@ -43,7 +43,6 @@ const navSections = [
   {
     label: "DEVELOPMENT",
     items: [
-      { title: "Bootcamps", url: "/bootcamp", icon: GraduationCap },
       { title: "Strategy Hub", url: "/strategy", icon: Target },
     ],
   },
