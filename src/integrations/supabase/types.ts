@@ -17,6 +17,8 @@ export type Database = {
       algorithm_results: {
         Row: {
           ahp_data: Json | null
+          ahp_weights_used: Json | null
+          capability_match: number | null
           computed_at: string | null
           cosine_similarity: number | null
           employee_id: string | null
@@ -26,16 +28,27 @@ export type Database = {
           id: string
           jaccard_binary: number | null
           jaccard_weighted: number | null
+          learning_velocity: number | null
           manager_interview_id: string | null
           manager_readiness_adjustment: number | null
+          momentum_breakdown: Json | null
+          momentum_score: number | null
+          motivation_alignment: number | null
           normalized_gap_score: number | null
           overall_readiness: number | null
           role_id: string | null
+          role_type: string | null
+          scope_trajectory: number | null
+          score_breakdown: Json | null
+          technical_match: number | null
           tfidf_rarity: Json | null
+          three_layer_score: number | null
           upskilling_paths: Json | null
         }
         Insert: {
           ahp_data?: Json | null
+          ahp_weights_used?: Json | null
+          capability_match?: number | null
           computed_at?: string | null
           cosine_similarity?: number | null
           employee_id?: string | null
@@ -45,16 +58,27 @@ export type Database = {
           id?: string
           jaccard_binary?: number | null
           jaccard_weighted?: number | null
+          learning_velocity?: number | null
           manager_interview_id?: string | null
           manager_readiness_adjustment?: number | null
+          momentum_breakdown?: Json | null
+          momentum_score?: number | null
+          motivation_alignment?: number | null
           normalized_gap_score?: number | null
           overall_readiness?: number | null
           role_id?: string | null
+          role_type?: string | null
+          scope_trajectory?: number | null
+          score_breakdown?: Json | null
+          technical_match?: number | null
           tfidf_rarity?: Json | null
+          three_layer_score?: number | null
           upskilling_paths?: Json | null
         }
         Update: {
           ahp_data?: Json | null
+          ahp_weights_used?: Json | null
+          capability_match?: number | null
           computed_at?: string | null
           cosine_similarity?: number | null
           employee_id?: string | null
@@ -64,12 +88,21 @@ export type Database = {
           id?: string
           jaccard_binary?: number | null
           jaccard_weighted?: number | null
+          learning_velocity?: number | null
           manager_interview_id?: string | null
           manager_readiness_adjustment?: number | null
+          momentum_breakdown?: Json | null
+          momentum_score?: number | null
+          motivation_alignment?: number | null
           normalized_gap_score?: number | null
           overall_readiness?: number | null
           role_id?: string | null
+          role_type?: string | null
+          scope_trajectory?: number | null
+          score_breakdown?: Json | null
+          technical_match?: number | null
           tfidf_rarity?: Json | null
+          three_layer_score?: number | null
           upskilling_paths?: Json | null
         }
         Relationships: [

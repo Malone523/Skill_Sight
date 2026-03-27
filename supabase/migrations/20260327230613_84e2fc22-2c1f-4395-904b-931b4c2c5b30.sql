@@ -1,0 +1,11 @@
+ALTER TABLE algorithm_results ADD COLUMN IF NOT EXISTS momentum_score numeric DEFAULT 0;
+ALTER TABLE algorithm_results ADD COLUMN IF NOT EXISTS learning_velocity numeric DEFAULT 0;
+ALTER TABLE algorithm_results ADD COLUMN IF NOT EXISTS scope_trajectory numeric DEFAULT 0;
+ALTER TABLE algorithm_results ADD COLUMN IF NOT EXISTS motivation_alignment numeric DEFAULT 0;
+ALTER TABLE algorithm_results ADD COLUMN IF NOT EXISTS momentum_breakdown jsonb DEFAULT '{}';
+ALTER TABLE algorithm_results ADD COLUMN IF NOT EXISTS role_type text DEFAULT 'technical';
+ALTER TABLE algorithm_results ADD COLUMN IF NOT EXISTS ahp_weights_used jsonb DEFAULT '{}';
+ALTER TABLE algorithm_results ADD COLUMN IF NOT EXISTS technical_match numeric DEFAULT 0;
+ALTER TABLE algorithm_results ADD COLUMN IF NOT EXISTS capability_match numeric DEFAULT 0;
+ALTER TABLE algorithm_results ADD COLUMN IF NOT EXISTS three_layer_score numeric DEFAULT 0;
+ALTER TABLE algorithm_results ADD COLUMN IF NOT EXISTS score_breakdown jsonb DEFAULT '{}';
