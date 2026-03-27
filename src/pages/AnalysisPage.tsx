@@ -19,6 +19,7 @@ import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Responsi
 import {
   ArrowLeft, Download, RefreshCw, ArrowRight, Sparkles, Target,
   BarChart3, Route, Star, AlertTriangle, Shield, ChevronDown, ChevronUp,
+  Zap, TrendingUp, Brain, Heart,
 } from "lucide-react";
 
 export default function AnalysisPage() {
@@ -73,9 +74,21 @@ export default function AnalysisPage() {
       .then(({ data }) => { if (data?.[0]?.report_markdown) setReport(data[0].report_markdown); });
   }, [id]);
 
-  const readiness = latestResult
-    ? Math.round((latestResult.final_readiness || latestResult.overall_readiness || 0) * 100)
-    : localResults ? Math.round(localResults.overallReadiness * 100) : 0;
+  // Three-layer data
+  const threeLayerScore = (latestResult as any)?.three_layer_score ?? null;
+  const technicalMatch = (latestResult as any)?.technical_match ?? latestResult?.overall_readiness ?? localResults?.overallReadiness ?? 0;
+  const capabilityMatch = (latestResult as any)?.capability_match ?? 0.5;
+  const momentumScore = (latestResult as any)?.momentum_score ?? 0;
+  const momentumBreakdown = (latestResult as any)?.momentum_breakdown as any || null;
+  const roleType = (latestResult as any)?.role_type || 'technical_specialist';
+  const ahpWeightsUsed = (latestResult as any)?.ahp_weights_used as any || null;
+  const scoreBreakdown = (latestResult as any)?.score_breakdown as any || null;
+
+  const readiness = threeLayerScore != null
+    ? Math.round(threeLayerScore * 100)
+    : latestResult
+      ? Math.round((latestResult.final_readiness || latestResult.overall_readiness || 0) * 100)
+      : localResults ? Math.round(localResults.overallReadiness * 100) : 0;
 
   const gapAnalysis = latestResult?.gap_analysis
     ? latestResult.gap_analysis as unknown as { criticalGaps: Array<{ skill: string; currentProficiency: number; requiredProficiency: number; deficit: number; strategicWeight: number; weightedGap: number; priority: string }>; surplusSkills: Array<{ skill: string; current: number; required: number; surplus: number }>; normalizedGapScore: number; readinessPercent: number }
@@ -120,6 +133,17 @@ export default function AnalysisPage() {
             concerns: managerInterview.concerns,
             hiddenRole: managerInterview.hidden_role_suggestion,
           } : null,
+          momentumData: momentumBreakdown ? {
+            momentumScore: momentumBreakdown.momentum_score,
+            learningVelocity: momentumBreakdown.learning_velocity,
+            scopeTrajectory: momentumBreakdown.scope_trajectory,
+            motivationAlignment: momentumBreakdown.motivation_alignment,
+            narrative: momentumBreakdown.momentum_narrative,
+            trajectoryRisk: momentumBreakdown.trajectory_risk,
+          } : null,
+          roleType,
+          threeLayerScore: scoreBreakdown,
+          ahpWeightsUsed,
         },
       });
       if (error) throw error;
@@ -135,13 +159,16 @@ export default function AnalysisPage() {
     } finally {
       setReportLoading(false);
     }
-  }, [employee, targetRole, cosine, jaccBin, jaccW, gapAnalysis, tfidfRarity, upskillingPaths, managerInterview, latestResult, localResults, id, managerAdj]);
+  }, [employee, targetRole, cosine, jaccBin, jaccW, gapAnalysis, tfidfRarity, upskillingPaths, managerInterview, latestResult, localResults, id, managerAdj, momentumBreakdown, roleType, scoreBreakdown, ahpWeightsUsed]);
 
   if (!id) {
     return <EmployeeSelector title="Skills Analysis" subtitle="Select an employee to view their analysis" navigateTo="/analysis" />;
   }
   if (empLoading) return <div className="flex items-center justify-center h-64"><LoadingSpinner /></div>;
   if (!employee) return <div className="p-8 text-center text-muted-foreground">Employee not found</div>;
+
+  const roleTypeLabel = roleType.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase());
+  const interpretation = scoreBreakdown?.interpretation || '';
 
   return (
     <div>
@@ -172,27 +199,58 @@ export default function AnalysisPage() {
       />
 
       <div className="p-6 space-y-6">
-        {/* Algorithm Results Summary */}
+        {/* Three-Layer Assessment Hero */}
         <Card>
           <CardContent className="p-6">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-5">Three-Layer Assessment</h3>
             <div className="flex items-start gap-8">
-              <div className="flex flex-col items-center gap-1">
-                <ReadinessRing value={readiness} size="lg" />
-                <span className="text-xs text-muted-foreground mt-1">Final Readiness Score</span>
-                <span className="text-[11px] text-muted-foreground">
-                  Algorithmic: <span className="font-mono">{Math.round((latestResult?.overall_readiness ?? localResults?.overallReadiness ?? 0) * 100)}%</span>
-                  {managerAdj !== 0 && <> + Manager: <span className="font-mono">{managerAdj > 0 ? '+' : ''}{Math.round(managerAdj * 100)}%</span></>}
-                </span>
+              <div className="flex gap-6">
+                <div className="flex flex-col items-center">
+                  <ReadinessRing value={Math.round(technicalMatch * 100)} size="md" />
+                  <span className="text-xs font-semibold mt-1">Technical Match</span>
+                  <span className="text-[10px] text-muted-foreground">"Where now"</span>
+                </div>
+                <div className="flex flex-col items-center">
+                  <ReadinessRing value={Math.round(capabilityMatch * 100)} size="md" />
+                  <span className="text-xs font-semibold mt-1">Capability Match</span>
+                  <span className="text-[10px] text-muted-foreground">"How they think"</span>
+                </div>
+                <div className="flex flex-col items-center">
+                  <ReadinessRing value={Math.round(momentumScore * 100)} size="md" />
+                  <span className="text-xs font-semibold mt-1">Momentum Score</span>
+                  <span className="text-[10px] text-muted-foreground">"Where going"</span>
+                </div>
               </div>
-              <div className="flex-1 grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <MetricCard label="Profile Match" value={`${Math.round(cosine * 100)}%`} icon={<Target className="h-4 w-4" />} />
-                <MetricCard label="Skill Coverage" value={`${Math.round(jaccBin * 100)}%`} icon={<Shield className="h-4 w-4" />} />
-                <MetricCard label="Weighted Overlap" value={`${Math.round(jaccW * 100)}%`} icon={<BarChart3 className="h-4 w-4" />} />
-                <MetricCard label="Strategic Gap" value={`${Math.round(gapScore * 100)}%`} icon={<AlertTriangle className="h-4 w-4" />} />
+
+              <div className="flex-1 border-l border-border pl-8">
+                <div className="flex items-center gap-4 mb-3">
+                  <span className="text-4xl font-bold font-mono">{readiness}%</span>
+                  <span className="text-sm font-medium text-muted-foreground">Final Score</span>
+                </div>
+                <Progress value={readiness} className="h-2.5 mb-2" />
+                {interpretation && (
+                  <p className="text-sm text-muted-foreground italic mb-3">{interpretation}</p>
+                )}
+                <div className="flex gap-2">
+                  <Badge variant="secondary" className="text-[10px]">Role Type: {roleTypeLabel}</Badge>
+                  {ahpWeightsUsed?.weights && (
+                    <Badge variant="outline" className="text-[10px]">
+                      AHP adjusted for {roleTypeLabel} — Learning Agility {(ahpWeightsUsed.weights[2] * 100).toFixed(0)}%
+                    </Badge>
+                  )}
+                </div>
               </div>
             </div>
           </CardContent>
         </Card>
+
+        {/* Metric Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <MetricCard label="Profile Match" value={`${Math.round(cosine * 100)}%`} icon={<Target className="h-4 w-4" />} />
+          <MetricCard label="Skill Coverage" value={`${Math.round(jaccBin * 100)}%`} icon={<Shield className="h-4 w-4" />} />
+          <MetricCard label="Weighted Overlap" value={`${Math.round(jaccW * 100)}%`} icon={<BarChart3 className="h-4 w-4" />} />
+          <MetricCard label="Strategic Gap" value={`${Math.round(gapScore * 100)}%`} icon={<AlertTriangle className="h-4 w-4" />} />
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Skills Radar */}
@@ -247,6 +305,59 @@ export default function AnalysisPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Momentum Assessment */}
+        {momentumBreakdown && momentumBreakdown.momentum_score != null && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <Zap className="h-4 w-4 text-primary" /> Momentum Assessment — Where This Person Is Going
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <MomentumRow
+                label="Learning Velocity"
+                icon={<Brain className="h-3.5 w-3.5" />}
+                value={momentumBreakdown.learning_velocity || 0}
+                evidence={momentumBreakdown.learning_velocity_evidence}
+                signals={momentumBreakdown.learning_velocity_signals}
+                color="hsl(var(--primary))"
+              />
+              <MomentumRow
+                label="Scope Trajectory"
+                icon={<TrendingUp className="h-3.5 w-3.5" />}
+                value={momentumBreakdown.scope_trajectory || 0}
+                evidence={momentumBreakdown.scope_trajectory_evidence}
+                signals={momentumBreakdown.scope_trajectory_signals}
+                color="hsl(var(--green, 142 76% 36%))"
+              />
+              <MomentumRow
+                label="Motivation Alignment"
+                icon={<Heart className="h-3.5 w-3.5" />}
+                value={momentumBreakdown.motivation_alignment || 0}
+                evidence={momentumBreakdown.motivation_alignment_evidence}
+                signals={momentumBreakdown.motivation_alignment_signals}
+                color="hsl(270 60% 55%)"
+              />
+
+              {momentumBreakdown.momentum_narrative && (
+                <div className="border-l-4 border-primary/40 bg-primary/5 rounded-r-lg p-4 mt-4">
+                  <p className="text-sm italic text-foreground/80">{momentumBreakdown.momentum_narrative}</p>
+                </div>
+              )}
+
+              {(momentumBreakdown.trajectory_risk === 'medium' || momentumBreakdown.trajectory_risk === 'high') && (
+                <div className="flex items-start gap-3 p-3 bg-status-amber-light rounded-lg border border-status-amber/20">
+                  <AlertTriangle className="h-4 w-4 text-status-amber mt-0.5" />
+                  <div>
+                    <span className="text-xs font-semibold text-status-amber">Trajectory Risk: {momentumBreakdown.trajectory_risk}</span>
+                    <p className="text-xs text-muted-foreground mt-0.5">{momentumBreakdown.trajectory_risk_reason}</p>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Strengths + Rare Skills */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -365,31 +476,82 @@ export default function AnalysisPage() {
 
           <TabsContent value="raw">
             <Card>
-              <CardContent className="p-6">
-                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">
-                  Algorithm Results — {employee.name} vs {targetRole?.title || 'N/A'}
-                </h3>
-                <div className="space-y-2">
-                  <RawRow label="Cosine Similarity" value={cosine.toFixed(3)} desc="Profile shape alignment" />
-                  <RawRow label="Jaccard (Binary)" value={jaccBin.toFixed(3)} desc="Skill set coverage" />
-                  <RawRow label="Jaccard (Weighted)" value={jaccW.toFixed(3)} desc="Proficiency-weighted overlap" />
-                  <RawRow label="Weighted Gap Score" value={gapScore.toFixed(3)} desc="Strategic priority gap" />
-                  <RawRow label="Overall Readiness" value={((latestResult?.overall_readiness ?? localResults?.overallReadiness ?? 0)).toFixed(3)} desc="Composite score" />
-                  <RawRow label="Manager Adjustment" value={`${managerAdj >= 0 ? '+' : ''}${managerAdj.toFixed(3)}`} desc={managerInterview ? 'From manager interview' : 'Pending manager interview'} />
-                  <RawRow label="Final Readiness" value={`${readiness}%`} desc="" highlight />
+              <CardContent className="p-6 font-mono text-xs space-y-6">
+                {/* Three-Layer Breakdown */}
+                {threeLayerScore != null && (
+                  <div>
+                    <h3 className="font-semibold text-muted-foreground uppercase tracking-wider mb-3 font-sans text-xs">
+                      Three-Layer Score Breakdown
+                    </h3>
+                    <div className="space-y-1.5 border-b border-border pb-4">
+                      <RawMonoRow label="Technical Match" value={Number(technicalMatch).toFixed(3)} weight={scoreBreakdown?.weights?.technical} contribution={technicalMatch * (scoreBreakdown?.weights?.technical || 0.33)} />
+                      <RawMonoRow label="Capability Match" value={Number(capabilityMatch).toFixed(3)} weight={scoreBreakdown?.weights?.capability} contribution={capabilityMatch * (scoreBreakdown?.weights?.capability || 0.33)} />
+                      <RawMonoRow label="Momentum Score" value={Number(momentumScore).toFixed(3)} weight={scoreBreakdown?.weights?.momentum} contribution={momentumScore * (scoreBreakdown?.weights?.momentum || 0.33)} />
+                      <div className="flex items-center justify-between pt-1 border-t border-border font-bold">
+                        <span>Final Three-Layer</span>
+                        <span>{Number(threeLayerScore).toFixed(3)} → {readiness}%</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Role Type + AHP */}
+                <div>
+                  <h3 className="font-semibold text-muted-foreground uppercase tracking-wider mb-3 font-sans text-xs">
+                    Role Type: {roleTypeLabel} ({targetRole?.title || 'N/A'})
+                  </h3>
+                  <h4 className="text-muted-foreground mb-2 font-sans text-[11px]">AHP Weights Applied ({roleTypeLabel} profile)</h4>
+                  <div className="space-y-1.5">
+                    {ahpWeightsUsed?.weights ? (
+                      <>
+                        <RawRow label="Skills Match" value={`${(ahpWeightsUsed.weights[0] * 100).toFixed(1)}%`} desc="" />
+                        <RawRow label="Performance" value={`${(ahpWeightsUsed.weights[1] * 100).toFixed(1)}%`} desc="" />
+                        <RawRow label="Learning Agility" value={`${(ahpWeightsUsed.weights[2] * 100).toFixed(1)}%`} desc={roleType === 'emerging_tech' ? '← adjusted UP for emerging tech' : ''} />
+                        <RawRow label="Tenure" value={`${(ahpWeightsUsed.weights[3] * 100).toFixed(1)}%`} desc="" />
+                        <RawRow label="Strategic Fit" value={`${(ahpWeightsUsed.weights[4] * 100).toFixed(1)}%`} desc="" />
+                      </>
+                    ) : (
+                      <>
+                        <RawRow label="Skills Match" value="33.2%" desc="" />
+                        <RawRow label="Strategic Fit" value="30.5%" desc="" />
+                        <RawRow label="Learning Agility" value="15.8%" desc="" />
+                        <RawRow label="Performance" value="14.7%" desc="" />
+                        <RawRow label="Tenure" value="5.7%" desc="" />
+                      </>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground mt-2">Consistency Ratio: {ahpWeightsUsed?.cr != null ? `${(ahpWeightsUsed.cr * 100).toFixed(2)}%` : '0.69%'} ✓</p>
                 </div>
 
-                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mt-6 mb-4">
-                  AHP Criteria Weights (Neue Klasse priorities)
-                </h3>
-                <div className="space-y-2">
-                  <RawRow label="Skills Match" value="33.2%" desc="" />
-                  <RawRow label="Strategic Fit" value="30.5%" desc="" />
-                  <RawRow label="Learning Agility" value="15.8%" desc="" />
-                  <RawRow label="Performance" value="14.7%" desc="" />
-                  <RawRow label="Tenure" value="5.7%" desc="" />
+                {/* Momentum Breakdown */}
+                {momentumBreakdown && momentumBreakdown.momentum_score != null && (
+                  <div>
+                    <h3 className="font-semibold text-muted-foreground uppercase tracking-wider mb-3 font-sans text-xs">
+                      Momentum Breakdown
+                    </h3>
+                    <div className="space-y-1.5">
+                      <RawRow label="Learning Velocity" value={Number(momentumBreakdown.learning_velocity || 0).toFixed(3)} desc="Weight: 35%" />
+                      <RawRow label="Scope Trajectory" value={Number(momentumBreakdown.scope_trajectory || 0).toFixed(3)} desc="Weight: 35%" />
+                      <RawRow label="Motivation Align." value={Number(momentumBreakdown.motivation_alignment || 0).toFixed(3)} desc="Weight: 30%" />
+                      <RawRow label="Momentum Score" value={Number(momentumBreakdown.momentum_score || 0).toFixed(3)} desc="" highlight />
+                    </div>
+                  </div>
+                )}
+
+                {/* Classic Algorithm Results */}
+                <div>
+                  <h3 className="font-semibold text-muted-foreground uppercase tracking-wider mb-3 font-sans text-xs">
+                    Algorithm Results — {employee.name} vs {targetRole?.title || 'N/A'}
+                  </h3>
+                  <div className="space-y-1.5">
+                    <RawRow label="Cosine Similarity" value={cosine.toFixed(3)} desc="Profile shape alignment" />
+                    <RawRow label="Jaccard (Binary)" value={jaccBin.toFixed(3)} desc="Skill set coverage" />
+                    <RawRow label="Jaccard (Weighted)" value={jaccW.toFixed(3)} desc="Proficiency-weighted overlap" />
+                    <RawRow label="Weighted Gap Score" value={gapScore.toFixed(3)} desc="Strategic priority gap" />
+                    <RawRow label="Overall Readiness" value={((latestResult?.overall_readiness ?? localResults?.overallReadiness ?? 0)).toFixed(3)} desc="Composite score" />
+                    <RawRow label="Manager Adjustment" value={`${managerAdj >= 0 ? '+' : ''}${managerAdj.toFixed(3)}`} desc={managerInterview ? 'From manager interview' : 'Pending manager interview'} />
+                  </div>
                 </div>
-                <p className="text-[11px] text-muted-foreground mt-2 font-mono">Consistency Ratio: 0.69% ✓</p>
               </CardContent>
             </Card>
           </TabsContent>
@@ -450,6 +612,32 @@ export default function AnalysisPage() {
   );
 }
 
+function MomentumRow({ label, icon, value, evidence, signals, color }: {
+  label: string; icon: React.ReactNode; value: number;
+  evidence?: string; signals?: string[]; color: string;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center gap-2">
+        <span className="text-muted-foreground">{icon}</span>
+        <span className="text-sm font-medium flex-1">{label}</span>
+        <span className="font-mono text-sm font-semibold">{Math.round(value * 100)}%</span>
+      </div>
+      <div className="h-2 bg-secondary rounded-full overflow-hidden">
+        <div className="h-full rounded-full transition-all duration-500" style={{ width: `${value * 100}%`, backgroundColor: color }} />
+      </div>
+      {evidence && <p className="text-xs text-muted-foreground italic pl-6">{evidence}</p>}
+      {signals?.length ? (
+        <div className="flex flex-wrap gap-1 pl-6">
+          {signals.map((s, i) => (
+            <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground">{s}</span>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function MetricCard({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) {
   return (
     <div className="rounded-lg border border-border p-3 text-center">
@@ -466,6 +654,19 @@ function RawRow({ label, value, desc, highlight }: { label: string; value: strin
       <div className="flex items-center gap-3">
         <span className={`font-mono text-sm ${highlight ? 'font-bold text-primary' : ''}`}>{value}</span>
         {desc && <span className="text-[11px] text-muted-foreground w-40 text-right">{desc}</span>}
+      </div>
+    </div>
+  );
+}
+
+function RawMonoRow({ label, value, weight, contribution }: { label: string; value: string; weight?: number; contribution?: number }) {
+  return (
+    <div className="flex items-center justify-between py-1">
+      <span>{label}</span>
+      <div className="flex items-center gap-6">
+        <span>{value}</span>
+        {weight != null && <span className="text-muted-foreground">Weight: {(weight * 100).toFixed(0)}%</span>}
+        {contribution != null && <span className="text-muted-foreground">Contribution: {(contribution * 100).toFixed(1)}%</span>}
       </div>
     </div>
   );
