@@ -27,7 +27,7 @@ interface PipelineContextValue extends PipelineState {
 
 const initial: PipelineState = {
   phase: 'idle', employeeId: null, roleId: null, interviewId: null,
-  algorithmResultId: null, reportId: null, bootcampId: null, error: null,
+  algorithmResultId: null, reportId: null, error: null,
 };
 
 const PipelineContext = createContext<PipelineContextValue>({
