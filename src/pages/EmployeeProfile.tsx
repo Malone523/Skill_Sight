@@ -7,10 +7,14 @@ import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 import { useEmployee, useEmployeeSkills, useAlgorithmResults, useInterviews, useRoles } from "@/hooks/useData";
+import { useInvitations } from "@/hooks/useInvitations";
+import { InviteInterviewModal } from "@/components/InviteInterviewModal";
 import { supabase } from "@/integrations/supabase/client";
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer, Legend } from "recharts";
-import { Check, Clock, AlertCircle, Sparkles, ChevronRight, Users, BarChart3 } from "lucide-react";
+import { Check, Clock, AlertCircle, Sparkles, ChevronRight, Users, BarChart3, Mail, XCircle } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
+import { PRESET_PACKS } from "@/lib/presetPacks";
+import { toast } from "@/hooks/use-toast";
 
 export default function EmployeeProfile() {
   const { id } = useParams();
@@ -21,7 +25,12 @@ export default function EmployeeProfile() {
   const { data: interviews } = useInterviews(id);
   
   const { data: roles } = useRoles();
+  const { data: invitations, refetch: refetchInvitations } = useInvitations(id);
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
+  const [inviteModalOpen, setInviteModalOpen] = useState(false);
+
+  const pendingInvite = invitations?.find(i => i.status === 'pending');
+  const acceptedInvite = invitations?.find(i => i.status === 'accepted' || i.status === 'in_progress');
 
   useEffect(() => {
     if (!id) return;
@@ -72,7 +81,7 @@ export default function EmployeeProfile() {
 
   const pipeline = [
     { name: 'HR Data Ingested', done: true, icon: Check },
-    { name: 'Employee Interview', done: completedEmployee, inProgress: empInterviews.some(i => i.interview_type === 'employee' && i.status === 'in_progress'), icon: completedEmployee ? Check : Clock },
+    { name: 'Employee Interview', done: completedEmployee, inProgress: empInterviews.some(i => i.interview_type === 'employee' && i.status === 'in_progress'), pending: !!pendingInvite, icon: completedEmployee ? Check : Clock },
     { name: 'Manager Interview', done: completedManager, inProgress: empInterviews.some(i => i.interview_type === 'manager' && i.status === 'in_progress'), icon: completedManager ? Check : Clock },
     { name: 'Algorithm Analysis', done: !!latestResult, icon: latestResult ? Check : AlertCircle },
   ];
@@ -104,11 +113,42 @@ export default function EmployeeProfile() {
             </div>
           </div>
           <div className="flex flex-wrap gap-2 mt-4">
-            <Button size="sm" onClick={() => navigate(`/interview/employee/${id}`)}>Start Employee Interview</Button>
+            {pendingInvite ? (
+              <div className="flex items-center gap-3">
+                <Button size="sm" disabled className="bg-status-green/20 text-status-green border-status-green/30">
+                  <Check className="h-3 w-3 mr-1" /> Invitation Sent
+                </Button>
+                <button
+                  onClick={async () => {
+                    if (!confirm("Cancel this invitation?")) return;
+                    await supabase.from("interview_invitations" as any).update({ status: "expired" } as any).eq("id", pendingInvite.id);
+                    await supabase.from("interviews").update({ status: "cancelled" }).eq("id", pendingInvite.interview_id);
+                    refetchInvitations();
+                    toast({ title: "Invitation cancelled" });
+                  }}
+                  className="text-xs text-muted-foreground hover:text-destructive"
+                >Cancel Invite</button>
+              </div>
+            ) : acceptedInvite ? (
+              <Button size="sm" variant="outline" disabled>
+                <Clock className="h-3 w-3 mr-1" /> Interview In Progress
+              </Button>
+            ) : (
+              <Button size="sm" onClick={() => setInviteModalOpen(true)}>
+                <Mail className="h-3 w-3 mr-1" /> Invite to Interview
+              </Button>
+            )}
             <Button size="sm" variant="outline" onClick={() => navigate(`/interview/manager/${id}`)}>Start Manager Interview</Button>
             {latestResult && <Button size="sm" variant="outline" onClick={() => navigate(`/analysis/${id}`)}>View Analysis</Button>}
-            
           </div>
+          {employee && (
+            <InviteInterviewModal
+              open={inviteModalOpen}
+              onOpenChange={setInviteModalOpen}
+              employee={employee}
+              onSent={() => refetchInvitations()}
+            />
+          )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -229,8 +269,9 @@ export default function EmployeeProfile() {
                   <th className="text-left py-2 font-medium text-muted-foreground">Date</th>
                   <th className="text-left py-2 font-medium text-muted-foreground">Type</th>
                   <th className="text-left py-2 font-medium text-muted-foreground">Role</th>
-                  <th className="text-left py-2 font-medium text-muted-foreground">Status</th>
-                  <th className="text-right py-2 font-medium text-muted-foreground">Action</th>
+                   <th className="text-left py-2 font-medium text-muted-foreground">Focus</th>
+                   <th className="text-left py-2 font-medium text-muted-foreground">Status</th>
+                   <th className="text-right py-2 font-medium text-muted-foreground">Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -241,6 +282,15 @@ export default function EmployeeProfile() {
                       <td className="py-2.5">{interview.started_at ? new Date(interview.started_at).toLocaleDateString() : '—'}</td>
                       <td className="py-2.5 capitalize">{interview.interview_type}</td>
                       <td className="py-2.5">{role?.title || '—'}</td>
+                      <td className="py-2.5">
+                        {(() => {
+                          const inv = invitations?.find(inv => inv.interview_id === interview.id);
+                          const pack = inv?.preset_pack ? PRESET_PACKS.find(p => p.id === inv.preset_pack) : null;
+                          if (!pack) return <span className="text-muted-foreground">—</span>;
+                          const Icon = pack.icon;
+                          return <span className="inline-flex items-center gap-1 text-[10px] font-medium"><Icon className="h-3 w-3" />{pack.name}</span>;
+                        })()}
+                      </td>
                       <td className="py-2.5">
                         <span className={`px-2 py-0.5 rounded text-[10px] font-medium ${interview.status === 'completed' ? 'bg-status-green-light text-status-green' : interview.status === 'in_progress' ? 'bg-status-amber-light text-status-amber' : 'bg-secondary text-muted-foreground'}`}>{interview.status}</span>
                       </td>
