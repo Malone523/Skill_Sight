@@ -107,7 +107,7 @@ export default function EmployeeProfile() {
             <Button size="sm" onClick={() => navigate(`/interview/employee/${id}`)}>Start Employee Interview</Button>
             <Button size="sm" variant="outline" onClick={() => navigate(`/interview/manager/${id}`)}>Start Manager Interview</Button>
             {latestResult && <Button size="sm" variant="outline" onClick={() => navigate(`/analysis/${id}`)}>View Analysis</Button>}
-            {empBootcamps.length > 0 && <Button size="sm" variant="outline" onClick={() => navigate(`/bootcamp/${id}`)}>View Bootcamp</Button>}
+            
           </div>
         </div>
 

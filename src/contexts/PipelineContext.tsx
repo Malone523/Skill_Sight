@@ -166,34 +166,6 @@ export function PipelineProvider({ children }: { children: React.ReactNode }) {
         console.error("Report generation failed (non-blocking):", e);
       }
 
-      // Phase: generating bootcamp (only for manager interviews)
-      if (interviewType === 'manager') {
-        setState(s => ({ ...s, phase: 'generating_bootcamp' }));
-        try {
-          const readinessPercent = Math.round(finalReadiness * 100);
-          const { data: bootcampData } = await supabase.functions.invoke("generate-bootcamp", {
-            body: {
-              employeeName: employee.name, roleTitle: role.title,
-              gapAnalysis: results.gapAnalysis, upskillingPaths: results.upskillingPaths,
-              currentReadiness: readinessPercent, managerInsights,
-            },
-          });
-
-          if (bootcampData?.bootcamp) {
-            const bc = bootcampData.bootcamp;
-            const { data: savedBootcamp } = await supabase.from("bootcamps").insert({
-              employee_id: employeeId, target_role_id: roleId, algorithm_result_id: algorithmResultId,
-              title: bc.title, total_duration_weeks: bc.total_duration_weeks,
-              hours_per_week: bc.hours_per_week, modules: bc.modules as any,
-              milestones: bc.milestones as any, expected_outcomes: bc.expected_outcomes as any,
-              status: 'not_started',
-            }).select("id").single();
-            setState(s => ({ ...s, bootcampId: savedBootcamp?.id || null }));
-          }
-        } catch (e) {
-          console.error("Bootcamp generation failed (non-blocking):", e);
-        }
-      }
 
       setState(s => ({ ...s, phase: 'complete' }));
     } catch (e: any) {
