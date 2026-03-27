@@ -4,7 +4,10 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppLayout } from "@/components/AppLayout";
+import { EmployeeLayout } from "@/components/EmployeeLayout";
 import { PipelineProvider } from "@/contexts/PipelineContext";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 import ExecutiveDashboard from "./pages/ExecutiveDashboard";
 import EmployeeList from "./pages/EmployeeList";
@@ -12,46 +15,64 @@ import EmployeeProfile from "./pages/EmployeeProfile";
 import EmployeeInterview from "./pages/EmployeeInterview";
 import ManagerInterview from "./pages/ManagerInterview";
 import AnalysisPage from "./pages/AnalysisPage";
-
 import StrategyHub from "./pages/StrategyHub";
 import InternalReorg from "./pages/InternalReorg";
 import SuccessionBoard from "./pages/SuccessionBoard";
 import RolesPage from "./pages/RolesPage";
+import LoginPage from "./pages/LoginPage";
+import MyProfile from "./pages/MyProfile";
+import MyInterview from "./pages/MyInterview";
+import MyResults from "./pages/MyResults";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+function RootRedirect() {
+  const { profile, loading } = useAuth();
+  if (loading) return null;
+  if (!profile) return <Navigate to="/login" replace />;
+  return <Navigate to={profile.role === "manager" ? "/dashboard" : "/my-profile"} replace />;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <PipelineProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            
-            {/* Pages with sidebar layout */}
-            <Route path="/dashboard" element={<AppLayout><ExecutiveDashboard /></AppLayout>} />
-            <Route path="/employees" element={<AppLayout><EmployeeList /></AppLayout>} />
-            <Route path="/employees/:id" element={<AppLayout><EmployeeProfile /></AppLayout>} />
-            <Route path="/analysis" element={<AppLayout><AnalysisPage /></AppLayout>} />
-            <Route path="/analysis/:id" element={<AppLayout><AnalysisPage /></AppLayout>} />
-            <Route path="/strategy" element={<AppLayout><StrategyHub /></AppLayout>} />
-            <Route path="/reorg" element={<AppLayout><InternalReorg /></AppLayout>} />
-            <Route path="/succession" element={<AppLayout><SuccessionBoard /></AppLayout>} />
-            <Route path="/roles" element={<AppLayout><RolesPage /></AppLayout>} />
+      <AuthProvider>
+        <PipelineProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/" element={<RootRedirect />} />
 
-            {/* Fullscreen pages (no sidebar) */}
-            <Route path="/interview/employee" element={<EmployeeInterview />} />
-            <Route path="/interview/employee/:id" element={<EmployeeInterview />} />
-            <Route path="/interview/manager" element={<ManagerInterview />} />
-            <Route path="/interview/manager/:id" element={<ManagerInterview />} />
+              {/* Manager routes */}
+              <Route path="/dashboard" element={<ProtectedRoute role="manager"><AppLayout><ExecutiveDashboard /></AppLayout></ProtectedRoute>} />
+              <Route path="/employees" element={<ProtectedRoute role="manager"><AppLayout><EmployeeList /></AppLayout></ProtectedRoute>} />
+              <Route path="/employees/:id" element={<ProtectedRoute role="manager"><AppLayout><EmployeeProfile /></AppLayout></ProtectedRoute>} />
+              <Route path="/analysis" element={<ProtectedRoute role="manager"><AppLayout><AnalysisPage /></AppLayout></ProtectedRoute>} />
+              <Route path="/analysis/:id" element={<ProtectedRoute role="manager"><AppLayout><AnalysisPage /></AppLayout></ProtectedRoute>} />
+              <Route path="/strategy" element={<ProtectedRoute role="manager"><AppLayout><StrategyHub /></AppLayout></ProtectedRoute>} />
+              <Route path="/reorg" element={<ProtectedRoute role="manager"><AppLayout><InternalReorg /></AppLayout></ProtectedRoute>} />
+              <Route path="/succession" element={<ProtectedRoute role="manager"><AppLayout><SuccessionBoard /></AppLayout></ProtectedRoute>} />
+              <Route path="/roles" element={<ProtectedRoute role="manager"><AppLayout><RolesPage /></AppLayout></ProtectedRoute>} />
 
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </PipelineProvider>
+              {/* Fullscreen manager interview pages */}
+              <Route path="/interview/employee" element={<ProtectedRoute role="manager"><EmployeeInterview /></ProtectedRoute>} />
+              <Route path="/interview/employee/:id" element={<ProtectedRoute role="manager"><EmployeeInterview /></ProtectedRoute>} />
+              <Route path="/interview/manager" element={<ProtectedRoute role="manager"><ManagerInterview /></ProtectedRoute>} />
+              <Route path="/interview/manager/:id" element={<ProtectedRoute role="manager"><ManagerInterview /></ProtectedRoute>} />
+
+              {/* Employee routes */}
+              <Route path="/my-profile" element={<ProtectedRoute role="employee"><EmployeeLayout><MyProfile /></EmployeeLayout></ProtectedRoute>} />
+              <Route path="/my-interview" element={<ProtectedRoute role="employee"><EmployeeLayout><MyInterview /></EmployeeLayout></ProtectedRoute>} />
+              <Route path="/my-analysis" element={<ProtectedRoute role="employee"><EmployeeLayout><MyResults /></EmployeeLayout></ProtectedRoute>} />
+
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </PipelineProvider>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
