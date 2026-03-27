@@ -343,9 +343,12 @@ serve(async (req) => {
 
     const lastUserMessage = getLastUserMessage(typedMessages);
     const lastAssistantQuestion = getLastAssistantQuestion(typedMessages);
+    const lastUserClassification = lastUserMessage ? classifyUserMessage(lastUserMessage) : null;
+    const recentSubstantiveAnswerStreak = getRecentSubstantiveAnswerStreak(typedMessages);
+    const shouldForceAdvance = recentSubstantiveAnswerStreak >= 2 && lastUserClassification === "substantive";
 
     if (lastUserMessage) {
-      if (isRestartCommand(lastUserMessage) || isAdvanceCommand(lastUserMessage)) {
+      if (lastUserClassification === "command") {
         return new Response(
           JSON.stringify({
             message: buildStayOnQuestionReply(lastAssistantQuestion),
@@ -357,7 +360,7 @@ serve(async (req) => {
         );
       }
 
-      if (isGibberish(lastUserMessage)) {
+      if (lastUserClassification === "gibberish") {
         return new Response(
           JSON.stringify({
             message: buildRephraseReply(lastAssistantQuestion),
@@ -369,7 +372,7 @@ serve(async (req) => {
         );
       }
 
-      if (isVagueNonAnswer(lastUserMessage)) {
+      if (lastUserClassification === "vague") {
         return new Response(
           JSON.stringify({
             message: buildStayOnQuestionReply(lastAssistantQuestion),
