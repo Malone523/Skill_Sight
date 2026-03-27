@@ -76,9 +76,11 @@ export default function ManagerInterview() {
     }
   }, [employee, messages, managerName]);
 
+  const pipeline = usePipeline();
+
   const handleComplete = async (assessment: any, finalMessages: Message[]) => {
     // Save interview
-    await supabase.from("interviews").insert({
+    const { data: interview } = await supabase.from("interviews").insert({
       employee_id: id,
       interview_type: "manager",
       interviewer_name: managerName,
@@ -94,7 +96,7 @@ export default function ManagerInterview() {
       manager_confidence_score: assessment.manager_confidence_score,
       hidden_role_suggestion: assessment.hidden_role_suggestion,
       completed_at: new Date().toISOString(),
-    });
+    }).select().single();
 
     // Merge observed skills
     if (assessment.observed_skills) {
@@ -110,28 +112,30 @@ export default function ManagerInterview() {
       }
     }
 
-    // Compute readiness adjustment
-    const mcs = assessment.manager_confidence_score || 0;
-    const numConcerns = (assessment.concerns || []).length;
-    let adjustment = 0;
-    if (mcs > 8) adjustment += 0.05;
-    adjustment -= Math.min(numConcerns * 0.05, 0.10);
-    adjustment = Math.max(-0.15, Math.min(0.10, adjustment));
-
-    // Update algorithm_results
-    const { data: existingResult } = await supabase.from("algorithm_results").select("*").eq("employee_id", id!).order("computed_at", { ascending: false }).limit(1).single();
-    if (existingResult) {
-      await supabase.from("algorithm_results").update({
-        manager_readiness_adjustment: adjustment,
-        final_readiness: (existingResult.overall_readiness || 0) + adjustment,
-      }).eq("id", existingResult.id);
-    }
-
+    // Run algorithm animation
     setPhase("algorithms_running");
     for (let i = 1; i <= 6; i++) {
       await new Promise(r => setTimeout(r, 300));
       setAlgorithmSteps(i);
     }
+
+    // Find the target role from existing algorithm results
+    const { data: existingResult } = await supabase.from("algorithm_results")
+      .select("role_id").eq("employee_id", id!).order("computed_at", { ascending: false }).limit(1).maybeSingle();
+    const targetRoleId = existingResult?.role_id;
+
+    // Trigger full pipeline (algorithms + report + bootcamp)
+    if (id && targetRoleId && interview) {
+      pipeline.completePipeline({
+        employeeId: id,
+        roleId: targetRoleId,
+        interviewId: interview.id,
+        interviewType: 'manager',
+        extractedSkills: assessment.observed_skills || {},
+        managerInsights: assessment,
+      }).catch(console.error);
+    }
+
     await new Promise(r => setTimeout(r, 800));
     setPhase("complete");
     setTimeout(() => navigate(`/analysis/${id}`), 3000);
