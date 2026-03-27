@@ -5,6 +5,7 @@ import { ReadinessRing } from "@/components/ReadinessRing";
 import { PriorityBadge } from "@/components/PriorityBadge";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { EmptyState } from "@/components/EmptyState";
+import { EmployeeSelector } from "@/components/EmployeeSelector";
 import { useEmployee, useEmployeeSkills, useAlgorithmResults, useRoles, useInterviews, useEmployees } from "@/hooks/useData";
 import { supabase } from "@/integrations/supabase/client";
 import { runFullAnalysis, type AlgorithmInput, type FullResults, type SkillVector } from "@/lib/algorithms";

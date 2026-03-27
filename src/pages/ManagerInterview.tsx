@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { EmployeeSelector } from "@/components/EmployeeSelector";
 import { useParams, useNavigate } from "react-router-dom";
 import { useEmployee, useRoles } from "@/hooks/useData";
 import { supabase } from "@/integrations/supabase/client";
