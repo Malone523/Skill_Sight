@@ -283,6 +283,15 @@ export default function EmployeeProfile() {
                       <td className="py-2.5 capitalize">{interview.interview_type}</td>
                       <td className="py-2.5">{role?.title || '—'}</td>
                       <td className="py-2.5">
+                        {(() => {
+                          const inv = invitations?.find(inv => inv.interview_id === interview.id);
+                          const pack = inv?.preset_pack ? PRESET_PACKS.find(p => p.id === inv.preset_pack) : null;
+                          if (!pack) return <span className="text-muted-foreground">—</span>;
+                          const Icon = pack.icon;
+                          return <span className="inline-flex items-center gap-1 text-[10px] font-medium"><Icon className="h-3 w-3" />{pack.name}</span>;
+                        })()}
+                      </td>
+                      <td className="py-2.5">
                         <span className={`px-2 py-0.5 rounded text-[10px] font-medium ${interview.status === 'completed' ? 'bg-status-green-light text-status-green' : interview.status === 'in_progress' ? 'bg-status-amber-light text-status-amber' : 'bg-secondary text-muted-foreground'}`}>{interview.status}</span>
                       </td>
                       <td className="py-2.5 text-right"><button className="text-primary hover:underline">View →</button></td>
