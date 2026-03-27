@@ -6,6 +6,7 @@ import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { SkillBadge } from "@/components/SkillBadge";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Sparkles, Check, ArrowLeft } from "lucide-react";
+import { usePipeline } from "@/contexts/PipelineContext";
 
 type Phase = "role_selection" | "interviewing" | "algorithms_running" | "complete";
 interface Message { role: "ai" | "user"; content: string; timestamp: Date }
@@ -90,6 +91,8 @@ export default function EmployeeInterview() {
     setDiscoveredSkills(newSkills);
   };
 
+  const pipeline = usePipeline();
+
   const handleInterviewComplete = async (extractedData: any, finalMessages: Message[]) => {
     // Save interview to DB
     const { data: interview } = await supabase.from("interviews").insert({
@@ -122,14 +125,25 @@ export default function EmployeeInterview() {
       }
     }
 
-    // Run algorithms phase
+    // Run full auto-pipeline: algorithms → report → navigate
     setPhase("algorithms_running");
     for (let i = 1; i <= 6; i++) {
       await new Promise(r => setTimeout(r, 300));
       setAlgorithmSteps(i);
     }
-    await new Promise(r => setTimeout(r, 800));
 
+    // Trigger pipeline in background
+    if (id && selectedRoleId && interview) {
+      pipeline.completePipeline({
+        employeeId: id,
+        roleId: selectedRoleId,
+        interviewId: interview.id,
+        interviewType: 'employee',
+        extractedSkills: extractedData.extracted_skills || {},
+      }).catch(console.error);
+    }
+
+    await new Promise(r => setTimeout(r, 800));
     setPhase("complete");
     setTimeout(() => navigate(`/analysis/${id}`), 3000);
   };

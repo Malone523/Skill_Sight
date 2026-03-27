@@ -7,9 +7,10 @@ import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 import { useEmployee, useEmployeeSkills, useAlgorithmResults, useInterviews, useBootcamps, useRoles } from "@/hooks/useData";
+import { supabase } from "@/integrations/supabase/client";
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer, Legend } from "recharts";
 import { Check, Clock, AlertCircle, MessageSquare, BarChart3, GraduationCap, Database, FileText, Users, Target, Sparkles, ChevronRight } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 
 export default function EmployeeProfile() {
   const { id } = useParams();
@@ -21,6 +22,25 @@ export default function EmployeeProfile() {
   const { data: bootcamps } = useBootcamps(id);
   const { data: roles } = useRoles();
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
+
+  // Realtime: re-fetch when interviews update for this employee
+  useEffect(() => {
+    if (!id) return;
+    const channel = supabase
+      .channel(`interview-updates-${id}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'interviews',
+        filter: `employee_id=eq.${id}`,
+      }, () => {
+        // Refetch all related data
+        window.location.reload();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [id]);
 
   const latestResult = results?.[0];
   const readiness = latestResult ? Math.round((latestResult.final_readiness || 0) * 100) : null;
