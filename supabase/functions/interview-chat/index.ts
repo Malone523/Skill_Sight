@@ -261,6 +261,28 @@ const buildStayOnQuestionReply = (question: string) =>
 const buildRephraseReply = (question: string) =>
   `I didn't quite catch that. Could you rephrase it and answer this part: ${question}`;
 
+const buildForcedAdvanceReply = (interviewType: string, targetSkills: string[] = [], messages: InterviewMessage[]) => {
+  const assistantTranscript = messages
+    .filter((message) => message.role === "ai")
+    .map((message) => normalizeText(message.content))
+    .join(" \n ");
+
+  const nextUnusedSkill = targetSkills.find((skill) => {
+    const normalizedSkill = normalizeText(skill);
+    return normalizedSkill && !assistantTranscript.includes(normalizedSkill);
+  });
+
+  if (interviewType === "manager") {
+    return nextUnusedSkill
+      ? `Thanks — that gives me useful context. Let’s shift to ${nextUnusedSkill}. What’s a specific time you observed this employee demonstrate that in practice?`
+      : "Thanks — that gives me a clearer picture. Let’s shift gears: what’s another strength or behaviour you’ve observed from this employee that might be easy to miss in formal HR data?";
+  }
+
+  return nextUnusedSkill
+    ? `Thanks — that helps. Let’s switch gears to ${nextUnusedSkill}. Can you tell me about a specific time you used that in your work?`
+    : "Thanks — that gives me a solid picture of that example. Let’s switch gears: what’s another project, skill, or challenge you’ve handled recently that says something important about your strengths?";
+};
+
 const classifyUserMessage = (value: string) => {
   if (isRestartCommand(value) || isAdvanceCommand(value)) return "command" as const;
   if (isGibberish(value)) return "gibberish" as const;
