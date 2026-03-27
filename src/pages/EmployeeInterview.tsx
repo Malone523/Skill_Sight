@@ -67,11 +67,14 @@ export default function EmployeeInterview() {
       if (error) throw error;
 
       const aiMsg: Message = { role: "ai", content: data.message, timestamp: new Date() };
+      const questionDelta = typeof data.questionDelta === "number" ? data.questionDelta : 1;
+      const nextQuestionsAsked = questionsAsked + questionDelta;
+
       setMessages(prev => [...prev, aiMsg]);
-      setQuestionsAsked(prev => prev + 1);
+      setQuestionsAsked(nextQuestionsAsked);
 
       if (data.isComplete && data.extractedData) {
-        await handleInterviewComplete(data.extractedData, [...newMessages, aiMsg]);
+        await handleInterviewComplete(data.extractedData, [...newMessages, aiMsg], nextQuestionsAsked);
       } else if (data.extractedData?.extracted_skills) {
         updateDiscoveredSkills(data.extractedData.extracted_skills);
       }
@@ -81,7 +84,7 @@ export default function EmployeeInterview() {
     } finally {
       setIsAiTyping(false);
     }
-  }, [employee, selectedRole, messages]);
+  }, [employee, selectedRole, messages, questionsAsked]);
 
   const updateDiscoveredSkills = (skills: Record<string, any>) => {
     const newSkills = Object.entries(skills).map(([name, data]: [string, any]) => ({

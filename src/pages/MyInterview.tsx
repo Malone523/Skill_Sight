@@ -51,9 +51,7 @@ export default function MyInterview() {
 
       setIsAiTyping(true);
       try {
-        const targetSkills = Object.keys(
-          (activeInterview as any).extracted_skills || {}
-        );
+        const targetSkills = Object.keys((activeInterview as any).extracted_skills || {});
         const { data, error } = await supabase.functions.invoke("interview-chat", {
           body: {
             messages: newMessages.map(m => ({ role: m.role, content: m.content })),
@@ -67,12 +65,19 @@ export default function MyInterview() {
 
         if (error) throw error;
 
-        const aiMsg: Message = { role: "ai", content: data.message, timestamp: new Date() };
+        const aiMsg: Message = {
+          role: "ai",
+          content: data.message,
+          timestamp: new Date(),
+        };
+        const questionDelta = typeof data.questionDelta === "number" ? data.questionDelta : 1;
+        const nextQuestionsAsked = questionsAsked + questionDelta;
+
         setMessages(prev => [...prev, aiMsg]);
-        setQuestionsAsked(prev => prev + 1);
+        setQuestionsAsked(nextQuestionsAsked);
 
         if (data.isComplete && data.extractedData) {
-          await handleComplete(data.extractedData, [...newMessages, aiMsg]);
+          await handleComplete(data.extractedData, [...newMessages, aiMsg], nextQuestionsAsked);
         }
       } catch (err) {
         console.error("Interview chat error:", err);
@@ -84,7 +89,7 @@ export default function MyInterview() {
         setIsAiTyping(false);
       }
     },
-    [employee, activeInterview, messages]
+    [employee, activeInterview, messages, questionsAsked]
   );
 
   const handleComplete = async (extractedData: any, finalMessages: Message[]) => {
