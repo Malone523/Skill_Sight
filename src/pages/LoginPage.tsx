@@ -44,9 +44,9 @@ export default function LoginPage() {
     return () => { cancelled = true; };
   }, []);
 
-  // Redirect if already authenticated
+  // Redirect if already authenticated (skip during role validation)
   useEffect(() => {
-    if (!authLoading && user && profile) {
+    if (!authLoading && user && profile && !roleCheckRef.current) {
       navigate(profile.role === "manager" ? "/dashboard" : "/my-profile", { replace: true });
     }
   }, [authLoading, user, profile, navigate]);
@@ -55,12 +55,17 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
     setLoading(true);
+    // Block auto-redirect while we validate
+    roleCheckRef.current = true;
+
     const { error: err } = await signIn(email, password);
     if (err) {
       setError("Invalid email or password. Please try again.");
       setLoading(false);
+      roleCheckRef.current = false;
       return;
     }
+
     // Check that the logged-in user's role matches the selected tab
     const { data: { user: signedInUser } } = await supabase.auth.getUser();
     if (signedInUser) {
@@ -77,9 +82,13 @@ export default function LoginPage() {
             : "This account is not an employee. Please switch to the Manager tab."
         );
         setLoading(false);
+        roleCheckRef.current = false;
         return;
       }
     }
+    // Role matches — allow redirect
+    roleCheckRef.current = false;
+    setLoading(false);
   };
 
   const hints = {
