@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { useEmployees, useAllEmployeeSkills, useRoles } from "@/hooks/useData";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,7 +10,7 @@ import { Progress } from "@/components/ui/progress";
 import { ReadinessRing } from "@/components/ReadinessRing";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Clock, Sparkles, Scan } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 interface ReorgMatch {
   employee: { id: string; name: string; job_title: string | null; department: string | null; avatar_initials: string | null; avatar_color: string | null };
@@ -24,12 +24,30 @@ export default function InternalReorg() {
   const { data: allSkills } = useAllEmployeeSkills();
   const { data: roles } = useRoles();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
   const [scanning, setScanning] = useState(false);
   const [results, setResults] = useState<ReorgMatch[] | null>(null);
+  const autoScanTriggered = useRef(false);
 
   const selectedRole = roles?.find(r => r.id === selectedRoleId);
+
+  // Auto-select role and start scan from URL params
+  useEffect(() => {
+    if (autoScanTriggered.current) return;
+    const roleId = searchParams.get("roleId");
+    const autoScan = searchParams.get("autoScan");
+    if (roleId && roles?.some(r => r.id === roleId)) {
+      setSelectedRoleId(roleId);
+      if (autoScan === "true") {
+        autoScanTriggered.current = true;
+      }
+    }
+  }, [searchParams, roles]);
+
+  // Trigger scan once role is selected via URL
+  const autoScanReady = autoScanTriggered.current && selectedRole && employees && allSkills && roles && !scanning && !results;
 
   const runScan = useCallback(async () => {
     if (!selectedRole || !employees || !allSkills || !roles) return;
@@ -108,6 +126,13 @@ export default function InternalReorg() {
     setResults(matches);
     setScanning(false);
   }, [selectedRole, employees, allSkills, roles]);
+
+  // Auto-trigger scan when navigated from dashboard
+  useEffect(() => {
+    if (autoScanReady) {
+      runScan();
+    }
+  }, [autoScanReady, runScan]);
 
   const immediate = results?.filter(r => r.readinessPercent >= 80) || [];
   const nearReady = results?.filter(r => r.readinessPercent >= 60 && r.readinessPercent < 80) || [];

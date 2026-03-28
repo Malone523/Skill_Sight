@@ -304,7 +304,7 @@ export default function ExecutiveDashboard() {
 
                   {urgency === 'HIGH' && (
                     <button
-                      onClick={() => navigate('/reorg')}
+                      onClick={() => navigate(`/reorg?roleId=${role.id}&autoScan=true`)}
                       className="w-full py-2 rounded-lg text-[14px] font-semibold text-white transition-colors"
                       style={{ backgroundColor: '#dc3545' }}
                     >
@@ -313,7 +313,7 @@ export default function ExecutiveDashboard() {
                   )}
                   {urgency === 'MEDIUM' && (
                     <button
-                      onClick={() => navigate('/reorg')}
+                      onClick={() => navigate(`/reorg?roleId=${role.id}&autoScan=true`)}
                       className="w-full py-2 rounded-lg text-[14px] font-semibold text-white transition-colors"
                       style={{ backgroundColor: '#f59e0b' }}
                     >
@@ -322,7 +322,7 @@ export default function ExecutiveDashboard() {
                   )}
                   {urgency === 'LOW' && (
                     <button
-                      onClick={() => navigate('/reorg')}
+                      onClick={() => navigate(`/reorg?roleId=${role.id}&autoScan=true`)}
                       className="w-full py-2 rounded-lg text-[14px] font-semibold border-2 transition-colors bg-transparent"
                       style={{ borderColor: '#22c55e', color: '#22c55e' }}
                     >
