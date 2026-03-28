@@ -314,10 +314,25 @@ export default function AnalysisPage() {
                   <span className="text-[11px] text-muted-foreground">& thinking patterns</span>
                 </div>
                 <div className="flex flex-col items-center">
-                  <ReadinessRing value={Math.round(momentumScore * 100)} size="md" />
+                  {momentumScore === null ? (
+                    <>
+                      <div className="relative" style={{ width: 80, height: 80 }}>
+                        <svg width={80} height={80} className="-rotate-90">
+                          <circle cx={40} cy={40} r={32} fill="none" stroke="hsl(var(--border))" strokeWidth={5} />
+                        </svg>
+                        <span className="absolute inset-0 flex items-center justify-center font-mono font-semibold text-muted-foreground" style={{ fontSize: 14 }}>N/A</span>
+                      </div>
+                    </>
+                  ) : (
+                    <ReadinessRing value={Math.round(momentumScore * 100)} size="md" />
+                  )}
                   <span className="text-xs font-semibold mt-1">Momentum Score</span>
-                  <span className="text-[11px] text-muted-foreground">Growth trajectory</span>
-                  <span className="text-[11px] text-muted-foreground">& role motivation</span>
+                  <span className="text-[11px] text-muted-foreground">
+                    {momentumScore === null ? 'Pending interview' : 'Growth trajectory'}
+                  </span>
+                  <span className="text-[11px] text-muted-foreground">
+                    {momentumScore === null ? 'data' : '& role motivation'}
+                  </span>
                 </div>
               </div>
 
