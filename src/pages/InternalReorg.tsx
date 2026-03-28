@@ -127,6 +127,13 @@ export default function InternalReorg() {
     setScanning(false);
   }, [selectedRole, employees, allSkills, roles]);
 
+  // Auto-trigger scan when navigated from dashboard
+  useEffect(() => {
+    if (autoScanReady) {
+      runScan();
+    }
+  }, [autoScanReady, runScan]);
+
   const immediate = results?.filter(r => r.readinessPercent >= 80) || [];
   const nearReady = results?.filter(r => r.readinessPercent >= 60 && r.readinessPercent < 80) || [];
   const developing = results?.filter(r => r.readinessPercent < 60) || [];
