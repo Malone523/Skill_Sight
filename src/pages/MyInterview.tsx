@@ -342,7 +342,7 @@ export default function MyInterview() {
       const threeLayer = computeThreeLayerScore(
         results.overallReadiness,
         capabilityReadiness,
-        momentum?.momentum_score || 0,
+        momentum?.momentum_score ?? null,
         roleType
       );
 
