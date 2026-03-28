@@ -212,10 +212,10 @@ export default function InterviewExternal() {
 
       const fullResults = runFullAnalysis(algorithmInput);
 
-      const momentumScore = momentum?.momentumScore || 0;
-      const learningVelocity = momentum?.learningVelocity || 0;
-      const scopeTrajectory = momentum?.scopeTrajectory || 0;
-      const motivationAlignment = momentum?.motivationAlignment || 0;
+      const momentumScoreVal = momentum?.momentum_score ?? null;
+      const learningVelocity = momentum?.learning_velocity ?? null;
+      const scopeTrajectory = momentum?.scope_trajectory ?? null;
+      const motivationAlignment = momentum?.motivation_alignment ?? null;
 
       const technicalMatch = fullResults.cosineSimilarity;
       const capabilityMatch = capabilityData
