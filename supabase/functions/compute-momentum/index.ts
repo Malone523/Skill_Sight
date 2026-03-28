@@ -28,21 +28,21 @@ serve(async (req) => {
       .map((m: any) => m.content)
       .join("\n\n");
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    // const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "x-api-key": "YOUR_NEW_API_KEY_HERE", // Replace with your new key
+        "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "claude-sonnet-4-20250514",
         max_tokens: 2500,
-        temperature: 0.1,
         messages: [
           {
-            role: "system",
+            role: "user",
             content: `You are a talent trajectory assessment system. You do not measure what someone knows right now. You measure where they are going and how fast they are getting there.
 
 You assess three components:
@@ -145,19 +145,16 @@ Assess their momentum across all three components.`,
         .replace(/```\s*/g, "")
         .trim();
       const jsonStart = cleaned.search(/[\{\[]/);
-      const jsonEnd = cleaned.lastIndexOf(
-        jsonStart !== -1 && cleaned[jsonStart] === "[" ? "]" : "}"
-      );
+      const jsonEnd = cleaned.lastIndexOf(jsonStart !== -1 && cleaned[jsonStart] === "[" ? "]" : "}");
       if (jsonStart !== -1 && jsonEnd !== -1) {
         cleaned = cleaned.substring(jsonStart, jsonEnd + 1);
       }
       try {
         data = JSON.parse(cleaned);
       } catch {
-        return new Response(
-          JSON.stringify({ momentum: null, error: "Failed to parse AI response" }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return new Response(JSON.stringify({ momentum: null, error: "Failed to parse AI response" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
     }
 
