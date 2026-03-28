@@ -280,17 +280,16 @@ export default function RolesPage() {
                     {(() => {
                       const named = skillReqs.filter(s => s.name.trim());
                       const total = named.reduce((sum, s) => sum + (Number(s.weight) || 0), 0);
-                      const weightColors: Record<string, string> = {
-                        '0.3': 'hsl(var(--muted))',
-                        '0.5': 'hsl(210 60% 80%)',
-                        '0.6': 'hsl(var(--primary))',
-                        '0.8': 'hsl(40 90% 55%)',
-                        '0.95': 'hsl(0 70% 55%)',
+                      const getWeightColor = (w: number) => {
+                        if (w >= 0.9) return 'hsl(0 70% 55%)';
+                        if (w >= 0.7) return 'hsl(40 90% 55%)';
+                        if (w >= 0.5) return 'hsl(var(--primary))';
+                        return 'hsl(var(--muted))';
                       };
                       return named.map((s, i) => {
                         const w = Number(s.weight) || 0;
                         const pct = total > 0 ? (w / total) * 100 : 0;
-                        const color = weightColors[String(s.weight)] || 'hsl(var(--primary))';
+                        const color = getWeightColor(w);
                         return (
                           <div
                             key={i}
