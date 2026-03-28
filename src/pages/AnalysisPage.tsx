@@ -236,7 +236,7 @@ export default function AnalysisPage() {
         },
       });
       if (error) throw error;
-      const md = data.report;
+      const md = data?.reportMarkdown || data?.report_markdown || data?.report || '';
       setReport(md);
       await supabase.from("reports").insert({
         employee_id: id, role_id: targetRole.id,
