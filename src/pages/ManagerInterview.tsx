@@ -241,9 +241,9 @@ export default function ManagerInterview() {
         {phase === "interviewing" && (
           <>
             <div className="card-skillsight p-3">
-              <p className="text-[13px] font-semibold">Question {questionsAsked} / 10</p>
+             <p className="text-[13px] font-semibold">Question {Math.min(questionsAsked, MAX_QUESTIONS)} / {MAX_QUESTIONS}</p>
               <div className="h-1 rounded-full bg-secondary mt-2 overflow-hidden">
-                <div className="h-full bg-bmw-blue rounded-full transition-all" style={{ width: `${(questionsAsked / 10) * 100}%` }} />
+                <div className="h-full bg-bmw-blue rounded-full transition-all" style={{ width: `${Math.min((questionsAsked / MAX_QUESTIONS) * 100, 100)}%` }} />
               </div>
             </div>
 
