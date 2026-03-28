@@ -35,7 +35,7 @@ export default function ExecutiveDashboard() {
   const { data: externalCandidates } = useQuery({
     queryKey: ["external_candidates_dashboard"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("external_candidates").select("id, interview_worthy, status, submission_source, manager_decision, name, role_id, submitted_at, worthy_score");
+      const { data, error } = await supabase.from("external_candidates").select("id, interview_worthy, status, submission_source, manager_decision, name, role_id, submitted_at, worthy_score, worthy_reasoning");
       if (error) throw error;
       return data;
     },
