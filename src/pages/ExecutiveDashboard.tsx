@@ -141,127 +141,6 @@ export default function ExecutiveDashboard() {
           <StatCard icon={Inbox} label="Pending Review" value={pendingReviewCount} subtitle="Self-submitted, AI-cleared" color="amber" />
         </div>
 
-        {/* Critical Hiring Priorities */}
-        <div className="card-skillsight p-6">
-          <div className="flex items-start justify-between mb-5">
-            <div>
-              <h2 className="text-[20px] font-bold">Critical Hiring Priorities</h2>
-              <p className="text-[13px] text-muted-foreground mt-0.5">Roles requiring immediate action — ranked by urgency</p>
-            </div>
-            <span className="px-2.5 py-1 rounded-full bg-secondary text-xs font-semibold font-mono text-foreground">
-              {openRoleCount} open
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {hiringPriorities.map(({ role, bestReadiness, bestEmployee, worthyExternals, urgency }) => {
-              const colors = urgencyColors[urgency];
-              const gap = 100 - bestReadiness;
-              return (
-                <div
-                  key={role.id}
-                  className="bg-card rounded-[14px] border border-border p-5 relative overflow-hidden"
-                  style={{ borderLeftWidth: 4, borderLeftColor: colors.border }}
-                >
-                  {/* Top row */}
-                  <div className="flex items-start justify-between mb-1">
-                    <h3 className="text-[16px] font-bold leading-tight">{role.title}</h3>
-                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0 ${colors.badgeBg}`}>
-                      {urgency}
-                    </span>
-                  </div>
-                  <p className="text-[13px] text-muted-foreground mb-4">{role.department || 'No department'}</p>
-
-                  {/* Best internal candidate */}
-                  <div className="mb-3">
-                    <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-1.5">Best Internal Match:</p>
-                    {bestEmployee ? (
-                      <div className="flex items-center gap-2">
-                        <span className="text-[13px] font-medium truncate">{bestEmployee.name}</span>
-                        <div className="flex-1 h-2 rounded-full bg-secondary overflow-hidden">
-                          <div className="h-full rounded-full transition-all" style={{ width: `${bestReadiness}%`, backgroundColor: colors.barBg }} />
-                        </div>
-                        <span className="text-[12px] font-mono font-semibold" style={{ color: colors.border }}>{bestReadiness}%</span>
-                      </div>
-                    ) : (
-                      <p className="text-[12px] italic text-destructive">No candidates assessed yet</p>
-                    )}
-                  </div>
-
-                  {/* External pipeline */}
-                  <div className="mb-4">
-                    <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">External Pipeline:</p>
-                    {worthyExternals > 0 ? (
-                      <span className="text-[13px] text-status-green font-medium flex items-center gap-1">
-                        <UserCheck className="h-3.5 w-3.5" /> {worthyExternals} qualified
-                      </span>
-                    ) : (
-                      <span className="text-[13px] text-destructive font-medium">0 qualified externals</span>
-                    )}
-                  </div>
-
-                  {/* Stats row */}
-                  <div className="flex items-center gap-4 mb-4 pb-4 border-b border-border">
-                    <div>
-                      <span className="text-[11px] text-muted-foreground">Internal Best: </span>
-                      <span className="text-[13px] font-mono font-bold" style={{ color: colors.border }}>{bestReadiness}%</span>
-                    </div>
-                    <div>
-                      <span className="text-[11px] text-muted-foreground">Gap to Ready: </span>
-                      <span className="text-[13px] font-mono font-bold text-destructive">{gap}%</span>
-                    </div>
-                  </div>
-
-                  {/* Action button */}
-                  {urgency === 'HIGH' && (
-                    <button
-                      onClick={() => navigate('/reorg')}
-                      className="w-full py-2 rounded-lg text-[14px] font-semibold text-white transition-colors"
-                      style={{ backgroundColor: '#dc3545' }}
-                    >
-                      Urgent — Start Assessment
-                    </button>
-                  )}
-                  {urgency === 'MEDIUM' && (
-                    <button
-                      onClick={() => navigate('/reorg')}
-                      className="w-full py-2 rounded-lg text-[14px] font-semibold text-white transition-colors"
-                      style={{ backgroundColor: '#f59e0b' }}
-                    >
-                      Review Candidates
-                    </button>
-                  )}
-                  {urgency === 'LOW' && (
-                    <button
-                      onClick={() => navigate('/reorg')}
-                      className="w-full py-2 rounded-lg text-[14px] font-semibold border-2 transition-colors bg-transparent"
-                      style={{ borderColor: '#22c55e', color: '#22c55e' }}
-                    >
-                      Monitor
-                    </button>
-                  )}
-                </div>
-              );
-            })}
-
-            {/* Empty slots */}
-            {Array.from({ length: emptySlots }).map((_, i) => (
-              <div
-                key={`empty-${i}`}
-                className="rounded-[14px] border-2 border-dashed border-border p-5 flex flex-col items-center justify-center gap-2 min-h-[200px] cursor-pointer hover:bg-accent/30 transition-colors"
-                onClick={() => navigate('/roles')}
-              >
-                <Plus className="h-8 w-8 text-muted-foreground/50" />
-                <p className="text-[13px] text-muted-foreground text-center">Add a role in Roles Manager to track hiring urgency</p>
-              </div>
-            ))}
-          </div>
-
-          <p className="text-[13px] text-muted-foreground italic text-center mt-5">
-            Urgency is computed from internal candidate readiness, external pipeline depth, and assessment recency — updated in real time.
-          </p>
-        </div>
-
         {/* Main content 60/40 split */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           {/* Left column */}
@@ -286,25 +165,6 @@ export default function ExecutiveDashboard() {
 
           {/* Right column */}
           <div className="lg:col-span-2 space-y-6">
-            <div className="card-skillsight p-5">
-              <h3 className="text-[15px] font-semibold mb-4">Internal Reorg Opportunity</h3>
-              {roles?.map(role => (
-                <div key={role.id} className="mb-3 cursor-pointer" onClick={() => navigate('/reorg')}>
-                  <p className="text-xs font-medium mb-1">{role.title}</p>
-                  <div className="flex gap-0.5 h-3 rounded-full overflow-hidden bg-secondary">
-                    <div className="bg-status-green rounded-l-full" style={{ width: '10%' }} />
-                    <div className="bg-primary" style={{ width: '20%' }} />
-                    <div className="bg-status-amber rounded-r-full" style={{ width: '30%' }} />
-                  </div>
-                </div>
-              ))}
-              <div className="flex gap-4 mt-3 text-[10px] text-muted-foreground">
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-status-green" />≥80%</span>
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-primary" />60-79%</span>
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-status-amber" />40-59%</span>
-              </div>
-            </div>
-
             <div className="card-skillsight p-5">
               <h3 className="text-[15px] font-semibold mb-4">Recent Assessments</h3>
               {results?.length ? results.slice(0, 5).map((r, i) => {
@@ -368,6 +228,121 @@ export default function ExecutiveDashboard() {
               )}
             </div>
           </div>
+        </div>
+
+        {/* Critical Hiring Priorities — bottom of page */}
+        <div className="card-skillsight p-6">
+          <div className="flex items-start justify-between mb-5">
+            <div>
+              <h2 className="text-[20px] font-bold">Critical Hiring Priorities</h2>
+              <p className="text-[13px] text-muted-foreground mt-0.5">Roles requiring immediate action — ranked by urgency</p>
+            </div>
+            <span className="px-2.5 py-1 rounded-full bg-secondary text-xs font-semibold font-mono text-foreground">
+              {openRoleCount} open
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {hiringPriorities.map(({ role, bestReadiness, bestEmployee, worthyExternals, urgency }) => {
+              const colors = urgencyColors[urgency];
+              const gap = 100 - bestReadiness;
+              return (
+                <div
+                  key={role.id}
+                  className="bg-card rounded-[14px] border border-border p-5 relative overflow-hidden"
+                  style={{ borderLeftWidth: 4, borderLeftColor: colors.border }}
+                >
+                  <div className="flex items-start justify-between mb-1">
+                    <h3 className="text-[16px] font-bold leading-tight">{role.title}</h3>
+                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0 ${colors.badgeBg}`}>
+                      {urgency}
+                    </span>
+                  </div>
+                  <p className="text-[13px] text-muted-foreground mb-4">{role.department || 'No department'}</p>
+
+                  <div className="mb-3">
+                    <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-1.5">Best Internal Match:</p>
+                    {bestEmployee ? (
+                      <div className="flex items-center gap-2">
+                        <span className="text-[13px] font-medium truncate">{bestEmployee.name}</span>
+                        <div className="flex-1 h-2 rounded-full bg-secondary overflow-hidden">
+                          <div className="h-full rounded-full transition-all" style={{ width: `${bestReadiness}%`, backgroundColor: colors.barBg }} />
+                        </div>
+                        <span className="text-[12px] font-mono font-semibold" style={{ color: colors.border }}>{bestReadiness}%</span>
+                      </div>
+                    ) : (
+                      <p className="text-[12px] italic text-destructive">No candidates assessed yet</p>
+                    )}
+                  </div>
+
+                  <div className="mb-4">
+                    <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">External Pipeline:</p>
+                    {worthyExternals > 0 ? (
+                      <span className="text-[13px] text-status-green font-medium flex items-center gap-1">
+                        <UserCheck className="h-3.5 w-3.5" /> {worthyExternals} qualified
+                      </span>
+                    ) : (
+                      <span className="text-[13px] text-destructive font-medium">0 qualified externals</span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-4 mb-4 pb-4 border-b border-border">
+                    <div>
+                      <span className="text-[11px] text-muted-foreground">Internal Best: </span>
+                      <span className="text-[13px] font-mono font-bold" style={{ color: colors.border }}>{bestReadiness}%</span>
+                    </div>
+                    <div>
+                      <span className="text-[11px] text-muted-foreground">Gap to Ready: </span>
+                      <span className="text-[13px] font-mono font-bold text-destructive">{gap}%</span>
+                    </div>
+                  </div>
+
+                  {urgency === 'HIGH' && (
+                    <button
+                      onClick={() => navigate('/reorg')}
+                      className="w-full py-2 rounded-lg text-[14px] font-semibold text-white transition-colors"
+                      style={{ backgroundColor: '#dc3545' }}
+                    >
+                      Urgent — Start Assessment
+                    </button>
+                  )}
+                  {urgency === 'MEDIUM' && (
+                    <button
+                      onClick={() => navigate('/reorg')}
+                      className="w-full py-2 rounded-lg text-[14px] font-semibold text-white transition-colors"
+                      style={{ backgroundColor: '#f59e0b' }}
+                    >
+                      Review Candidates
+                    </button>
+                  )}
+                  {urgency === 'LOW' && (
+                    <button
+                      onClick={() => navigate('/reorg')}
+                      className="w-full py-2 rounded-lg text-[14px] font-semibold border-2 transition-colors bg-transparent"
+                      style={{ borderColor: '#22c55e', color: '#22c55e' }}
+                    >
+                      Monitor
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+
+            {Array.from({ length: emptySlots }).map((_, i) => (
+              <div
+                key={`empty-${i}`}
+                className="rounded-[14px] border-2 border-dashed border-border p-5 flex flex-col items-center justify-center gap-2 min-h-[200px] cursor-pointer hover:bg-accent/30 transition-colors"
+                onClick={() => navigate('/roles')}
+              >
+                <Plus className="h-8 w-8 text-muted-foreground/50" />
+                <p className="text-[13px] text-muted-foreground text-center">Add a role in Roles Manager to track hiring urgency</p>
+              </div>
+            ))}
+          </div>
+
+          <p className="text-[13px] text-muted-foreground italic text-center mt-5">
+            Urgency is computed from internal candidate readiness, external pipeline depth, and assessment recency — updated in real time.
+          </p>
         </div>
       </div>
     </div>
