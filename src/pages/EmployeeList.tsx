@@ -35,13 +35,21 @@ export default function EmployeeList() {
   const { data: allSkills } = useAllEmployeeSkills();
   const { data: results } = useAlgorithmResults();
   const { data: externalCandidates, refetch: refetchExternal } = useExternalCandidates();
+  const { data: roles } = useRoles();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [search, setSearch] = useState("");
   const [deptFilter, setDeptFilter] = useState("all");
   const [readinessFilter, setReadinessFilter] = useState("all");
-  const [viewMode, setViewMode] = useState<"internal" | "external">("internal");
+  const initialView = searchParams.get("tab") === "external" ? "external" : "internal";
+  const [viewMode, setViewMode] = useState<"internal" | "external">(initialView);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [extFilter, setExtFilter] = useState<"all" | "pending" | "self">(searchParams.get("filter") === "pending" ? "pending" : "all");
+  const [declineOpen, setDeclineOpen] = useState(false);
+  const [declineTarget, setDeclineTarget] = useState<any>(null);
+  const [declineNote, setDeclineNote] = useState("");
+  const [codeModalCandidate, setCodeModalCandidate] = useState<any>(null);
 
   const departments = useMemo(() => {
     if (!employees) return [];
