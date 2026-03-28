@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useRoles } from "@/hooks/useData";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { Copy, Check } from "lucide-react";
+import { Copy, Check, Target } from "lucide-react";
 
 export function AddExternalCandidateModal({ open, onOpenChange, onCreated }: {
   open: boolean;

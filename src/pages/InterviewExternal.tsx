@@ -217,7 +217,7 @@ export default function InterviewExternal() {
       const scopeTrajectory = momentum?.scopeTrajectory || 0;
       const motivationAlignment = momentum?.motivationAlignment || 0;
 
-      const technicalMatch = fullResults.cosine;
+      const technicalMatch = fullResults.cosineSimilarity;
       const capabilityMatch = capabilityData
         ? Object.values(capabilityData.capability_profile || {}).filter((c: any) =>
             ["DEMONSTRATED", "EXCEPTIONAL"].includes(c.rating) && c.relevance_to_role === "HIGH"
