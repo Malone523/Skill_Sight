@@ -270,83 +270,116 @@ export default function EmployeeList() {
 
         {/* External candidates grid */}
         {viewMode === "external" && (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {filteredExternal.length === 0 ? (
-              <div className="col-span-full text-center py-12">
-                <UserPlus className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-                <p className="text-sm font-medium">No external candidates yet</p>
-                <p className="text-xs text-muted-foreground mt-1">Click "External Candidate" to add one and generate an interview code.</p>
-              </div>
-            ) : (
-              filteredExternal.map(c => {
-                const initials = c.name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
-                const role = c.roles as any;
-                const score = c.full_three_layer_score != null ? Math.round(c.full_three_layer_score * 100) : null;
-                const codeDisplay = c.access_code ? c.access_code.slice(0, 3) + "***" : "";
-                const isExpiringSoon = c.code_expires_at ? (new Date(c.code_expires_at).getTime() - Date.now()) < 2 * 24 * 60 * 60 * 1000 : false;
+          <div className="space-y-4">
+            {/* Sub-filter tabs */}
+            <div className="flex gap-1">
+              {[
+                { value: "all" as const, label: "All" },
+                { value: "pending" as const, label: `Pending Review${pendingCount > 0 ? ` (${pendingCount})` : ""}` },
+                { value: "self" as const, label: "Self-Submitted" },
+              ].map(f => (
+                <button
+                  key={f.value}
+                  onClick={() => setExtFilter(f.value)}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${extFilter === f.value ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:bg-accent"}`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
 
-                return (
-                  <div key={c.id} className="card-skillsight p-5">
-                    <div className="flex items-start gap-3">
-                      <div className="w-11 h-11 rounded-full bg-purple-500 flex items-center justify-center text-sm font-bold text-primary-foreground shrink-0">
-                        {initials}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[15px] font-bold truncate">{c.name}</p>
-                        <p className="text-[13px] text-muted-foreground truncate">{role?.title || "Unknown Role"}</p>
-                        <div className="mt-1">{statusBadge(c.status || "invited")}</div>
-                      </div>
-                    </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {filteredExternal.length === 0 ? (
+                <div className="col-span-full text-center py-12">
+                  <UserPlus className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+                  <p className="text-sm font-medium">No candidates match this filter</p>
+                </div>
+              ) : (
+                filteredExternal.map(c => {
+                  const initials = c.name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
+                  const role = c.roles as any;
+                  const score = c.full_three_layer_score != null ? Math.round(c.full_three_layer_score * 100) : null;
+                  const codeDisplay = c.access_code ? c.access_code.slice(0, 3) + "***" : "";
+                  const isExpiringSoon = c.code_expires_at ? (new Date(c.code_expires_at).getTime() - Date.now()) < 2 * 24 * 60 * 60 * 1000 : false;
+                  const isSelfSubmit = (c as any).submission_source === "candidate_self_submit";
+                  const isPendingReview = isSelfSubmit && (c as any).manager_decision === "pending" && c.interview_worthy;
 
-                    {/* Score */}
-                    <div className="mt-3">
-                      {score !== null ? (
-                        <div className="flex items-center gap-2">
-                          <ReadinessRing value={score} size="sm" />
-                          <div>
-                            <p className="text-xs font-medium">Full Score: {score}%</p>
-                            <Badge variant="outline" className="text-[9px] mt-0.5">CV + Interview ✓</Badge>
+                  return (
+                    <div key={c.id} className="card-skillsight p-5">
+                      <div className="flex items-start gap-3">
+                        <div className="w-11 h-11 rounded-full bg-purple-500 flex items-center justify-center text-sm font-bold text-primary-foreground shrink-0">
+                          {initials}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="text-[15px] font-bold truncate">{c.name}</p>
+                            {isSelfSubmit && <Badge variant="outline" className="text-[9px] shrink-0">Self-submitted</Badge>}
+                          </div>
+                          <p className="text-[13px] text-muted-foreground truncate">{role?.title || "Unknown Role"}</p>
+                          <div className="mt-1">{statusBadge(c.status || "invited")}</div>
+                        </div>
+                      </div>
+
+                      {/* Score */}
+                      <div className="mt-3">
+                        {score !== null ? (
+                          <div className="flex items-center gap-2">
+                            <ReadinessRing value={score} size="sm" />
+                            <div>
+                              <p className="text-xs font-medium">Full Score: {score}%</p>
+                              <Badge variant="outline" className="text-[9px] mt-0.5">CV + Interview ✓</Badge>
+                            </div>
+                          </div>
+                        ) : c.worthy_score != null ? (
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <span className="font-mono">Partial Score (CV Only): {Math.round(c.worthy_score * 100)}%</span>
+                            <Badge variant="secondary" className="text-[9px]">CV Only ⚠</Badge>
+                          </div>
+                        ) : null}
+                      </div>
+
+                      {/* Code section */}
+                      {c.status === "invited" && c.access_code && (
+                        <div className="mt-3 p-2 rounded-md bg-secondary text-xs space-y-1">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Code: <span className="font-mono font-medium">{codeDisplay}</span></span>
+                            {c.code_expires_at && (
+                              <span className={isExpiringSoon ? "text-yellow-600 font-medium" : "text-muted-foreground"}>
+                                Expires {new Date(c.code_expires_at).toLocaleDateString()}
+                              </span>
+                            )}
                           </div>
                         </div>
-                      ) : c.worthy_score != null ? (
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <span className="font-mono">Partial Score (CV Only): {Math.round(c.worthy_score * 100)}%</span>
-                          <Badge variant="secondary" className="text-[9px]">CV Only ⚠</Badge>
-                        </div>
-                      ) : null}
-                    </div>
+                      )}
 
-                    {/* Code section */}
-                    {c.status === "invited" && c.access_code && (
-                      <div className="mt-3 p-2 rounded-md bg-secondary text-xs space-y-1">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Code: <span className="font-mono font-medium">{codeDisplay}</span></span>
-                          {c.code_expires_at && (
-                            <span className={isExpiringSoon ? "text-yellow-600 font-medium" : "text-muted-foreground"}>
-                              Expires {new Date(c.code_expires_at).toLocaleDateString()}
-                            </span>
-                          )}
-                        </div>
+                      {/* Actions */}
+                      <div className="flex gap-2 mt-4">
+                        {isPendingReview && (
+                          <>
+                            <Button size="sm" className="flex-1 text-xs bg-green-600 hover:bg-green-700" onClick={() => handleApprove(c)}>
+                              <CheckCircle className="w-3 h-3 mr-1" />Send Interview Code
+                            </Button>
+                            <Button variant="outline" size="sm" className="text-xs text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => { setDeclineTarget(c); setDeclineOpen(true); }}>
+                              <XCircle className="w-3 h-3 mr-1" />Decline
+                            </Button>
+                          </>
+                        )}
+                        {c.status === "completed" && (
+                          <Button size="sm" className="flex-1 text-xs" onClick={() => navigate(`/analysis-external/${c.id}`)}>
+                            View Full Assessment
+                          </Button>
+                        )}
+                        {c.status === "invited" && (
+                          <Button variant="outline" size="sm" className="flex-1 text-xs">
+                            View Code
+                          </Button>
+                        )}
                       </div>
-                    )}
-
-                    {/* Actions */}
-                    <div className="flex gap-2 mt-4">
-                      {c.status === "completed" && (
-                        <Button size="sm" className="flex-1 text-xs" onClick={() => navigate(`/analysis-external/${c.id}`)}>
-                          View Full Assessment
-                        </Button>
-                      )}
-                      {c.status === "invited" && (
-                        <Button variant="outline" size="sm" className="flex-1 text-xs">
-                          View Code
-                        </Button>
-                      )}
                     </div>
-                  </div>
-                );
-              })
-            )}
+                  );
+                })
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -356,6 +389,34 @@ export default function EmployeeList() {
         onOpenChange={setShowAddModal}
         onCreated={() => refetchExternal()}
       />
+
+      {/* Code modal after approve */}
+      {codeModalCandidate && (
+        <AddExternalCandidateModal
+          open={!!codeModalCandidate}
+          onOpenChange={() => setCodeModalCandidate(null)}
+          onCreated={() => refetchExternal()}
+        />
+      )}
+
+      {/* Decline dialog */}
+      <Dialog open={declineOpen} onOpenChange={setDeclineOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Decline {declineTarget?.name}'s application?</DialogTitle>
+          </DialogHeader>
+          <Textarea
+            placeholder="Add a reason (internal only, not shown to candidate)"
+            value={declineNote}
+            onChange={e => setDeclineNote(e.target.value)}
+            rows={3}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeclineOpen(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDecline}>Confirm Decline</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
