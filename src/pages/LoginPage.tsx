@@ -96,6 +96,17 @@ export default function LoginPage() {
     employee: { email: "anna.keller@bmw-skillsight.com", password: "SkillSight2026!" },
   };
 
+  const employeeAccounts = [
+    "anna.keller@bmw-skillsight.com",
+    "thomas.bauer@bmw-skillsight.com",
+    "marcus.schmidt@bmw.de",
+    "jens.richter@bmw.de",
+    "klaus.hoffmann@bmw.de",
+    "lena.fischer@bmw.de",
+    "sarah.weber@bmw.de",
+    "marie.dupont@bmw.de",
+  ];
+
   // --- Interview code handlers ---
   const handleDigitChange = (index: number, value: string) => {
     if (!/^\d*$/.test(value)) return;
