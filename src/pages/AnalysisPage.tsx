@@ -871,12 +871,13 @@ export default function AnalysisPage() {
 // ─── Score With Factors Component ───────────────────────────────────
 
 function ScoreWithFactors({
-  title, score, color, factors, standout, capabilityDetails,
+  title, score, color, factors, standout, capabilityDetails, isNull,
 }: {
-  title: string; score: number; color: string;
+  title: string; score: number | null; color: string;
   factors: { label: string; value: string; note: string }[];
   standout?: string;
   capabilityDetails?: [string, any][];
+  isNull?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
 
