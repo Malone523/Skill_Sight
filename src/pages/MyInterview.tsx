@@ -163,6 +163,24 @@ export default function MyInterview() {
       const newSkillsDiscovered = interpreted?.new_skills_discovered || [];
       const interviewSummary = interpreted?.interview_summary || "";
 
+      // Phase 1b: Map capabilities (behavioral inference)
+      let capabilityData: any = null;
+      try {
+        const { data: capResult } = await supabase.functions.invoke("map-capabilities", {
+          body: {
+            conversationHistory: historyForInterpret,
+            employeeName: employee.name,
+            employeeRole: employee.job_title || "Employee",
+            targetRole: targetRole?.title || "Target Role",
+            requiredSkills: targetRole ? (targetRole.required_skills || {}) : {},
+            existingSkills: existingSkillsMap,
+          },
+        });
+        capabilityData = capResult?.capabilities;
+      } catch (e) {
+        console.error("Capability mapping failed (non-blocking):", e);
+      }
+
       // Phase 2: Save completed interview
       await supabase
         .from("interviews")
