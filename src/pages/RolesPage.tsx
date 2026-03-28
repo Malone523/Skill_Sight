@@ -24,6 +24,15 @@ export default function RolesPage() {
   const { data: allResults } = useAlgorithmResults();
   const navigate = useNavigate();
 
+  const { data: openApps, refetch: refetchApps } = useQuery({
+    queryKey: ["open_applications"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("open_applications").select("*");
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const [editOpen, setEditOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
@@ -34,6 +43,7 @@ export default function RolesPage() {
   const [isOpen, setIsOpen] = useState(true);
   const [skillReqs, setSkillReqs] = useState<SkillReq[]>([]);
   const [detailRole, setDetailRole] = useState<any>(null);
+  const [copiedLink, setCopiedLink] = useState<string | null>(null);
 
   const openNew = () => {
     setEditId(null); setTitle(""); setDepartment(""); setDescription(""); setHeadcount(1); setIsOpen(true); setSkillReqs([]);
