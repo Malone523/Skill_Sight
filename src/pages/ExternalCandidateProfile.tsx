@@ -138,17 +138,6 @@ export default function ExternalCandidateProfile() {
     return <Badge variant={s.variant} className={`text-[10px] ${s.className || ''}`}>{s.label}</Badge>;
   };
 
-  // Parse hybrid reasoning data
-  const hybridInfo = useMemo(() => {
-    try {
-      const data = JSON.parse(candidate.worthy_reasoning || '{}');
-      if (data.method) return data;
-      return null;
-    } catch {
-      return null;
-    }
-  }, [candidate.worthy_reasoning]);
-
   const handleApprove = async () => {
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
