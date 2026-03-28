@@ -224,7 +224,7 @@ export default function InterviewExternal() {
           ).length / Math.max(Object.keys(capabilityData.capability_profile || {}).length, 1)
         : 0;
 
-      const threeLayer = computeThreeLayerScore(technicalMatch, capabilityMatch, momentumScore, roleType);
+      const threeLayer = computeThreeLayerScore(technicalMatch, capabilityMatch, momentumScoreVal, roleType);
 
       // Step 5: Update interview record
       await supabase.from("interviews").update({
