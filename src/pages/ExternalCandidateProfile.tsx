@@ -113,17 +113,29 @@ export default function ExternalCandidateProfile() {
   };
 
   const statusBadge = () => {
-    const map: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+    const map: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; className?: string }> = {
       pending_manager_review: { label: "Pending Review", variant: "outline" },
       below_threshold: { label: "Below Threshold", variant: "destructive" },
       interviewing: { label: "Interview In Progress", variant: "outline" },
       completed: { label: "Assessment Complete", variant: "default" },
       invited: { label: "Invited", variant: "secondary" },
       rejected: { label: "Declined", variant: "secondary" },
+      flagged_review: { label: "⚠ Needs Review", variant: "outline", className: "border-amber-500 text-amber-700 bg-amber-50" },
     };
     const s = map[candidate.status || ""] || { label: candidate.status || "Unknown", variant: "secondary" as const };
-    return <Badge variant={s.variant} className="text-[10px]">{s.label}</Badge>;
+    return <Badge variant={s.variant} className={`text-[10px] ${s.className || ''}`}>{s.label}</Badge>;
   };
+
+  // Parse hybrid reasoning data
+  const hybridInfo = useMemo(() => {
+    try {
+      const data = JSON.parse(candidate.worthy_reasoning || '{}');
+      if (data.method) return data;
+      return null;
+    } catch {
+      return null;
+    }
+  }, [candidate.worthy_reasoning]);
 
   const handleApprove = async () => {
     const code = Math.floor(100000 + Math.random() * 900000).toString();
