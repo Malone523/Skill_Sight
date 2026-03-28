@@ -350,6 +350,7 @@ export default function AnalysisPage() {
             color="hsl(270 60% 55%)"
             factors={capabilityFactors.factors}
             standout={capabilityFactors.standout}
+            capabilityDetails={capabilityFactors.allCaps}
           />
           <ScoreWithFactors
             title="Momentum Score"
