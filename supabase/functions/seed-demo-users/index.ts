@@ -62,7 +62,7 @@ serve(async (req) => {
         email: "manager@bmw-skillsight.com",
         password: "SkillSight2026!",
         email_confirm: true,
-        user_metadata: { full_name: "Dr. Ishansh Gupta" },
+        user_metadata: { full_name: "Dr. Marcus Weber" },
       });
 
       if (managerErr) {
@@ -74,7 +74,7 @@ serve(async (req) => {
           email: "manager@bmw-skillsight.com",
           role: "manager",
           employee_id: null,
-          full_name: "Dr. Ishansh Gupta",
+          full_name: "Dr. Marcus Weber",
         });
         results.push("Manager created");
       }
