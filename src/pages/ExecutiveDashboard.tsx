@@ -117,7 +117,7 @@ export default function ExecutiveDashboard() {
       <PageHeader title="Executive Dashboard" subtitle="Workforce intelligence overview" />
       <div className="p-6 space-y-6">
         {/* Stat cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
           <StatCard icon={Users} label="Employees Profiled" value={employees?.length || 0} subtitle="Full HR + interview data" color="blue" />
           <TooltipProvider>
             <Tooltip>
@@ -135,6 +135,7 @@ export default function ExecutiveDashboard() {
           <StatCard icon={MessageSquare} label="Interviews Completed" value={completedInterviews} subtitle="Employee + manager combined" color="blue" />
           <StatCard icon={GraduationCap} label="Active Bootcamps" value={activeBootcamps} subtitle="Personalized training plans" color="amber" />
           <StatCard icon={DollarSign} label="Hiring Cost Avoided" value={hiringCostAvoided > 0 ? `€${(hiringCostAvoided / 1000000).toFixed(1)}M` : '€0'} subtitle="Through internal mobility" color="green" />
+          <StatCard icon={UserPlus} label="External Pipeline" value={externalWorthyCount} subtitle="Interview-worthy candidates" color="purple" />
         </div>
 
         {/* Main content 60/40 split */}
