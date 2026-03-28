@@ -60,8 +60,8 @@ export function ReadinessRing({ value, size = "md", label }: ReadinessRingProps)
         {value}%
       </span>
       </div>
-      {label && size !== "sm" && (
-        <span className="text-[11px] text-muted-foreground mt-0.5">{label}</span>
+      {label && (
+        <span className={`text-muted-foreground mt-0.5 ${size === "sm" ? "text-[9px]" : "text-[11px]"}`}>{label}</span>
       )}
     </div>
   );
