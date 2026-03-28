@@ -232,6 +232,7 @@ export default function AnalysisPage() {
           roleType,
           threeLayerScore: scoreBreakdown,
           ahpWeightsUsed,
+          capabilityData: capabilityData || null,
         },
       });
       if (error) throw error;
