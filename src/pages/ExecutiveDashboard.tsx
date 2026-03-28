@@ -141,57 +141,61 @@ export default function ExecutiveDashboard() {
           <StatCard icon={Inbox} label="Pending Review" value={pendingReviewCount} subtitle="Self-submitted, AI-cleared" color="amber" />
         </div>
 
-        {/* Main content 60/40 split */}
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        {/* Main content row — stretch aligned */}
+        <div className="flex flex-col lg:flex-row gap-6 items-stretch">
           {/* Left column */}
-          <div className="lg:col-span-3 space-y-6">
-            <div className="card-skillsight p-5">
+          <div className="lg:flex-[3] flex flex-col">
+            <div className="card-skillsight p-5 flex flex-col flex-1">
               <h3 className="text-[15px] font-semibold mb-4">Skill Coverage vs Strategic Requirements</h3>
               {radarData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={280}>
-                  <RadarChart data={radarData}>
-                    <PolarGrid stroke="hsl(var(--border))" />
-                    <PolarAngleAxis dataKey="skill" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
-                    <Radar name="Current Workforce" dataKey="workforce" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.3} />
-                    <Radar name="Strategic Need" dataKey="strategic" stroke="hsl(var(--destructive))" fill="hsl(var(--destructive))" fillOpacity={0.2} strokeDasharray="5 5" />
-                    <Legend wrapperStyle={{ fontSize: 11 }} />
-                  </RadarChart>
-                </ResponsiveContainer>
+                <div className="flex-1 min-h-0 w-full" style={{ minHeight: 240 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RadarChart data={radarData}>
+                      <PolarGrid stroke="hsl(var(--border))" />
+                      <PolarAngleAxis dataKey="skill" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
+                      <Radar name="Current Workforce" dataKey="workforce" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.3} />
+                      <Radar name="Strategic Need" dataKey="strategic" stroke="hsl(var(--destructive))" fill="hsl(var(--destructive))" fillOpacity={0.2} strokeDasharray="5 5" />
+                      <Legend wrapperStyle={{ fontSize: 11 }} />
+                    </RadarChart>
+                  </ResponsiveContainer>
+                </div>
               ) : (
-                <p className="text-sm text-muted-foreground text-center py-8">No skill data available</p>
+                <p className="text-sm text-muted-foreground text-center py-8 flex-1 flex items-center justify-center">No skill data available</p>
               )}
             </div>
           </div>
 
           {/* Right column */}
-          <div className="lg:col-span-2 space-y-6">
-            <div className="card-skillsight p-5">
+          <div className="lg:flex-[2] flex flex-col gap-6">
+            <div className="card-skillsight p-5 flex flex-col flex-1">
               <h3 className="text-[15px] font-semibold mb-4">Recent Assessments</h3>
-              {results?.length ? results.slice(0, 5).map((r, i) => {
-                const emp = employees?.find(e => e.id === r.employee_id);
-                const role = roles?.find(ro => ro.id === r.role_id);
-                if (!emp) return null;
-                const tls = (r as any).three_layer_score;
-                const displayScore = tls != null ? Math.round(tls * 100) : Math.round((r.final_readiness || 0) * 100);
-                return (
-                  <div key={r.id} className={`flex items-center gap-3 py-3 cursor-pointer hover:bg-accent/50 rounded-md px-1 ${i > 0 ? 'border-t border-border' : ''}`}
-                    onClick={() => navigate(`/analysis/${emp.id}`)}>
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-primary-foreground shrink-0" style={{ backgroundColor: emp.avatar_color || 'hsl(213, 77%, 47%)' }}>
-                      {emp.avatar_initials}
+              <div className="flex-1">
+                {results?.length ? results.slice(0, 5).map((r, i) => {
+                  const emp = employees?.find(e => e.id === r.employee_id);
+                  const role = roles?.find(ro => ro.id === r.role_id);
+                  if (!emp) return null;
+                  const tls = (r as any).three_layer_score;
+                  const displayScore = tls != null ? Math.round(tls * 100) : Math.round((r.final_readiness || 0) * 100);
+                  return (
+                    <div key={r.id} className={`flex items-center gap-3 py-3 cursor-pointer hover:bg-accent/50 rounded-md px-1 ${i > 0 ? 'border-t border-border' : ''}`}
+                      onClick={() => navigate(`/analysis/${emp.id}`)}>
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-primary-foreground shrink-0" style={{ backgroundColor: emp.avatar_color || 'hsl(213, 77%, 47%)' }}>
+                        {emp.avatar_initials}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium truncate">{emp.name}</p>
+                        <p className="text-[10px] text-muted-foreground truncate">{role?.title || 'Unknown role'}</p>
+                      </div>
+                      <ReadinessRing value={displayScore} size="sm" />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium truncate">{emp.name}</p>
-                      <p className="text-[10px] text-muted-foreground truncate">{role?.title || 'Unknown role'}</p>
-                    </div>
-                    <ReadinessRing value={displayScore} size="sm" />
-                  </div>
-                );
-              }) : (
-                <p className="text-xs text-muted-foreground text-center py-4">No assessments yet</p>
-              )}
+                  );
+                }) : (
+                  <p className="text-xs text-muted-foreground text-center py-4">No assessments yet</p>
+                )}
+              </div>
             </div>
 
-            <div className="card-skillsight p-5">
+            <div className="card-skillsight p-5 flex flex-col">
               <div className="flex items-center gap-2 mb-4">
                 <span className="w-2 h-2 rounded-full bg-status-amber" />
                 <h3 className="text-[15px] font-semibold">New Applications — Pending Your Review</h3>
