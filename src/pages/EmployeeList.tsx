@@ -316,7 +316,6 @@ export default function EmployeeList() {
 
                   <div className="flex gap-2 mt-4">
                     <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => navigate(`/employees/${emp.id}`)}>View Profile</Button>
-                    <Button size="sm" className="flex-1 text-xs" onClick={() => navigate(`/interview/employee/${emp.id}`)}>Start Interview</Button>
                   </div>
                 </div>
               );
