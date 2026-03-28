@@ -34,7 +34,8 @@ serve(async (req) => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": "YOUR_NEW_API_KEY_HERE", // Replace with your new key
+        "x-api-key":
+          "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", // Replace with your new key
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
