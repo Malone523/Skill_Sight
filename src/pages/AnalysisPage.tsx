@@ -411,31 +411,32 @@ export default function AnalysisPage() {
 
           {/* Priority Skill Gaps */}
           <Card>
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-semibold">Priority Skill Gaps</CardTitle>
-                {gapAnalysis?.criticalGaps && (
-                  <Badge variant="secondary" className="text-xs">{gapAnalysis.criticalGaps.length} gaps</Badge>
-                )}
-              </div>
+            <CardHeader className="pb-1">
+              <CardTitle className="text-xs font-semibold">Priority Skill Gaps</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {gapAnalysis?.criticalGaps?.slice(0, 6).map((gap, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <PriorityBadge priority={gap.priority as 'critical' | 'high' | 'medium' | 'low'} />
-                    <span className="text-sm font-medium flex-1">{gap.skill.replace(/([A-Z])/g, ' $1').trim()}</span>
-                    <div className="flex items-center gap-1.5 text-xs">
-                      <span className="font-mono text-muted-foreground">{gap.currentProficiency}</span>
-                      <ArrowRight className="h-3 w-3 text-muted-foreground" />
-                      <span className="font-mono font-semibold">{gap.requiredProficiency}</span>
-                    </div>
-                    <span className="text-[11px] text-muted-foreground font-mono w-10 text-right">
-                      {(gap.strategicWeight * 100).toFixed(0)}%
-                    </span>
+            <CardContent className="pt-2">
+              {(() => {
+                const critical = gapAnalysis?.criticalGaps?.filter((g: any) => g.priority === 'critical' || g.priority === 'high') || [];
+                const minor = gapAnalysis?.criticalGaps?.filter((g: any) => g.priority !== 'critical' && g.priority !== 'high') || [];
+                return (
+                  <div className="space-y-1.5">
+                    {critical.length > 0 ? critical.slice(0, 4).map((gap: any, i: number) => (
+                      <div key={i} className="flex items-center gap-2 py-1">
+                        <PriorityBadge priority={gap.priority as 'critical' | 'high' | 'medium' | 'low'} />
+                        <span className="text-xs font-medium flex-1">{gap.skill.replace(/([A-Z])/g, ' $1').trim()}</span>
+                        <span className="text-[10px] text-muted-foreground font-mono">
+                          wt {(gap.strategicWeight * 100).toFixed(0)}%
+                        </span>
+                      </div>
+                    )) : <p className="text-xs text-muted-foreground">No critical gaps identified</p>}
+                    {minor.length > 0 && (
+                      <p className="text-[10px] text-muted-foreground pt-1 border-t border-border">
+                        + {minor.length} minor gap{minor.length > 1 ? 's' : ''} ({minor.map((g: any) => g.skill.replace(/([A-Z])/g, ' $1').trim()).join(', ')})
+                      </p>
+                    )}
                   </div>
-                )) || <p className="text-sm text-muted-foreground">No gaps identified</p>}
-              </div>
+                );
+              })()}
             </CardContent>
           </Card>
         </div>
@@ -637,28 +638,23 @@ export default function AnalysisPage() {
           </Card>
         )}
 
-        {/* AI Report */}
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-semibold">AI Assessment Report</CardTitle>
+          <CardHeader className="pb-1">
+            <CardTitle className="text-xs font-semibold">AI Assessment</CardTitle>
           </CardHeader>
-          <CardContent className="p-6">
+          <CardContent className="pt-2">
             {reportLoading ? (
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <RefreshCw className="h-4 w-4 animate-spin text-primary" />
-                  <span className="text-sm text-muted-foreground">Generating your personalised action plan…</span>
-                </div>
-                {[...Array(8)].map((_, i) => <Skeleton key={i} className="h-4 w-full" />)}
+              <div className="flex items-center gap-3 py-4">
+                <RefreshCw className="h-4 w-4 animate-spin text-primary" />
+                <span className="text-xs text-muted-foreground">Generating report…</span>
               </div>
             ) : report ? (
-              <div className="prose prose-sm max-w-none prose-headings:text-foreground prose-p:text-foreground/80 prose-strong:text-foreground prose-li:text-foreground/80" dangerouslySetInnerHTML={{ __html: markdownToHtml(report.replace(/### Risk Factors[\s\S]*?(?=\n### |\n## |$)/, '').replace(/### 90-Day Action Plan[\s\S]*?(?=\n### |\n## |$)/, '').replace(/### 6-Month Roadmap[\s\S]*?(?=\n### |\n## |$)/, '').replace(/### Recommended Development Timeline[\s\S]*?(?=\n### |\n## |$)/, '')) }} />
+              <div className="prose prose-xs max-w-none prose-headings:text-foreground prose-headings:text-sm prose-headings:mt-3 prose-headings:mb-1 prose-p:text-foreground/80 prose-p:text-xs prose-p:mb-1.5 prose-p:leading-relaxed prose-strong:text-foreground prose-li:text-foreground/80 prose-li:text-xs prose-li:my-0.5" dangerouslySetInnerHTML={{ __html: markdownToHtml(report.replace(/### Risk Factors[\s\S]*?(?=\n### |\n## |$)/, '').replace(/### 90-Day Action Plan[\s\S]*?(?=\n### |\n## |$)/, '').replace(/### 6-Month Roadmap[\s\S]*?(?=\n### |\n## |$)/, '').replace(/### Recommended Development Timeline[\s\S]*?(?=\n### |\n## |$)/, '')) }} />
             ) : (
-              <div className="text-center py-12">
-                <Sparkles className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
-                <p className="text-sm text-muted-foreground mb-4">AI will interpret your algorithm results into an actionable plan.</p>
-                <Button onClick={generateReport} className="bg-primary text-primary-foreground">
-                  Generate AI Report
+              <div className="text-center py-6">
+                <p className="text-xs text-muted-foreground mb-3">Generate AI assessment report</p>
+                <Button size="sm" onClick={generateReport} className="bg-primary text-primary-foreground text-xs h-7">
+                  Generate Report
                 </Button>
               </div>
             )}
