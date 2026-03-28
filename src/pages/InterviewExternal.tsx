@@ -271,7 +271,7 @@ export default function InterviewExternal() {
             },
           },
         });
-        reportMarkdown = reportData?.report || "";
+        reportMarkdown = reportData?.reportMarkdown || reportData?.report_markdown || reportData?.report || "";
       } catch (e) {
         console.error("Report gen failed:", e);
       }
