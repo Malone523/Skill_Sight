@@ -42,6 +42,7 @@ export default function ExecutiveDashboard() {
   });
   const externalWorthyCount = externalCandidates?.filter((c: any) => c.interview_worthy).length || 0;
   const pendingReviewCount = externalCandidates?.filter((c: any) => c.submission_source === "candidate_self_submit" && c.manager_decision === "pending" && c.interview_worthy).length || 0;
+  const flaggedReviewCount = externalCandidates?.filter((c: any) => c.status === "flagged_review").length || 0;
 
   // Critical Hiring Priorities
   const hiringPriorities = useMemo(() => {
