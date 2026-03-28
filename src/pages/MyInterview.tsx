@@ -338,8 +338,7 @@ export default function MyInterview() {
 
       const results = runFullAnalysis(algorithmInput);
 
-      // Compute three-layer score
-      const capabilityReadiness = 0.5; // Default capability — no separate capability function yet
+      // Compute three-layer score (capabilityReadiness already computed above)
       const threeLayer = computeThreeLayerScore(
         results.overallReadiness,
         capabilityReadiness,
