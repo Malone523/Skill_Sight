@@ -46,7 +46,17 @@ export function TopBar() {
 
   return (
     <div className="h-12 border-b border-border bg-background px-6 flex items-center justify-between shrink-0">
-      <span className="text-sm font-medium text-foreground">{pageName}</span>
+      <div className="flex items-center gap-2">
+        {canGoBack && (
+          <button
+            onClick={() => navigate(-1)}
+            className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </button>
+        )}
+        <span className="text-sm font-medium text-foreground">{pageName}</span>
+      </div>
 
       <DropdownMenu>
         <DropdownMenuTrigger className="flex items-center gap-2 outline-none">
