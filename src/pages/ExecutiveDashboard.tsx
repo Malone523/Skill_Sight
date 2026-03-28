@@ -55,12 +55,13 @@ export default function ExecutiveDashboard() {
   const { data: externalCandidates } = useQuery({
     queryKey: ["external_candidates_dashboard"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("external_candidates").select("id, interview_worthy, status").eq("interview_worthy", true);
+      const { data, error } = await supabase.from("external_candidates").select("id, interview_worthy, status, submission_source, manager_decision, name, role_id, submitted_at, worthy_score");
       if (error) throw error;
       return data;
     },
   });
-  const externalWorthyCount = externalCandidates?.length || 0;
+  const externalWorthyCount = externalCandidates?.filter((c: any) => c.interview_worthy).length || 0;
+  const pendingReviewCount = externalCandidates?.filter((c: any) => c.submission_source === "candidate_self_submit" && c.manager_decision === "pending" && c.interview_worthy).length || 0;
 
   const radarData = useMemo(() => {
     const strategicSkills = ['ThermalEngineering', 'Python', 'MachineLearning', 'EVBatterySystems', 'AUTOSAR', 'ProjectManagement', 'DeepLearning', 'ManufacturingProcesses'];
