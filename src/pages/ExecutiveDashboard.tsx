@@ -74,26 +74,33 @@ export default function ExecutiveDashboard() {
           })
         : null;
       const bestEmployee = bestResult ? employees?.find(e => e.id === bestResult.employee_id) : null;
-      const worthyExternals = externalCandidates?.filter((c: any) => c.role_id === role.id && c.interview_worthy).length || 0;
+      const worthyExternals = externalCandidates?.filter((c: any) => c.role_id === role.id && c.interview_worthy && c.status !== 'talent_pool' && c.status !== 'proceeding').length || 0;
+      const talentPoolReady = externalCandidates?.filter((c: any) => c.role_id === role.id && (c.status === 'talent_pool' || c.status === 'proceeding')).length || 0;
       const recentInterview = interviews?.some(i => i.target_role_id === role.id && i.completed_at && new Date(i.completed_at).getTime() > thirtyDaysAgo);
 
-      // Urgency logic: actively_hiring with low readiness = HIGH, internal_development = MEDIUM unless <50%
+      // Urgency logic
       let urgency: 'HIGH' | 'MEDIUM' | 'LOW';
       if (roleStatus === 'actively_hiring') {
         if (bestReadiness < 60) urgency = 'HIGH';
         else if (bestReadiness <= 75) urgency = 'MEDIUM';
         else urgency = 'LOW';
       } else {
-        // internal_development
         if (bestReadiness < 50) urgency = 'HIGH';
         else urgency = 'MEDIUM';
       }
 
-      let urgencyScore = bestReadiness;
-      if (worthyExternals === 0) urgencyScore -= 10;
-      if (!recentInterview) urgencyScore -= 5;
+      // Talent pool reduces urgency by one step
+      if (talentPoolReady > 0) {
+        if (urgency === 'HIGH') urgency = 'MEDIUM';
+        else if (urgency === 'MEDIUM') urgency = 'LOW';
+      }
 
-      return { role, bestReadiness, bestEmployee, worthyExternals, recentInterview, urgency, urgencyScore };
+      let urgencyScore = bestReadiness;
+      if (worthyExternals === 0 && talentPoolReady === 0) urgencyScore -= 10;
+      if (!recentInterview) urgencyScore -= 5;
+      if (talentPoolReady > 0) urgencyScore += 15;
+
+      return { role, bestReadiness, bestEmployee, worthyExternals, talentPoolReady, recentInterview, urgency, urgencyScore };
     }).sort((a, b) => a.urgencyScore - b.urgencyScore).slice(0, 4);
   }, [roles, results, employees, externalCandidates, interviews]);
 
