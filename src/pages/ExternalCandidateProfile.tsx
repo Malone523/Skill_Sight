@@ -249,7 +249,52 @@ export default function ExternalCandidateProfile() {
         </div>
 
         {/* Hybrid Verdict Banner */}
-        {hybridInfo && (
+        {hybridInfo && (() => {
+          const builderRatio = hybridInfo.builder_verb_ratio != null ? hybridInfo.builder_verb_ratio : null;
+          const metricsCount = hybridInfo.metrics_count != null ? hybridInfo.metrics_count : null;
+          const absenceAnalysis = hybridInfo.absence_analysis || null;
+          const verbAssessment = hybridInfo.verb_quality_assessment || null;
+
+          const OwnershipSignals = () => (
+            <div className="space-y-3 mt-3 pt-3 border-t border-border/50">
+              {/* Builder/Participant ratio bar */}
+              {builderRatio != null && (
+                <div>
+                  <p className="text-[11px] font-medium text-muted-foreground mb-1">Ownership Signal</p>
+                  <div className="flex h-3 rounded-full overflow-hidden bg-muted">
+                    <div className="bg-primary h-full transition-all" style={{ width: `${Math.round(builderRatio * 100)}%` }} />
+                    <div className="bg-muted-foreground/20 h-full flex-1" />
+                  </div>
+                  <div className="flex justify-between mt-0.5">
+                    <span className="text-[10px] text-primary font-medium">Builder {Math.round(builderRatio * 100)}%</span>
+                    <span className="text-[10px] text-muted-foreground">Participant {Math.round((1 - builderRatio) * 100)}%</span>
+                  </div>
+                  {builderRatio < 0.5 && (
+                    <p className="text-[10px] text-amber-600 mt-0.5 flex items-center gap-1">
+                      <AlertTriangle className="h-2.5 w-2.5" />Mostly participation language detected.
+                    </p>
+                  )}
+                  {verbAssessment && <p className="text-[10px] text-muted-foreground italic mt-0.5">{verbAssessment}</p>}
+                </div>
+              )}
+
+              {/* Metrics count badge */}
+              {metricsCount != null && (
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className={`text-[10px] ${metricsCount >= 3 ? 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300' : metricsCount >= 1 ? 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300' : 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300'}`}>
+                    <BarChart3 className="h-3 w-3 mr-1" />{metricsCount} measurable impact{metricsCount !== 1 ? 's' : ''} found
+                  </Badge>
+                </div>
+              )}
+
+              {/* Absence analysis (collapsible) */}
+              {absenceAnalysis && (
+                <AbsenceAnalysisSection analysis={absenceAnalysis} />
+              )}
+            </div>
+          );
+
+          return (
           <Card className={
             hybridInfo.confidence === 'flagged'
               ? 'border-amber-400 border-2'
@@ -266,12 +311,15 @@ export default function ExternalCandidateProfile() {
                   <div className="flex items-center gap-2">
                     <CheckCircle className="h-5 w-5 text-green-600" />
                     <div>
-                      <h3 className="text-base font-bold text-green-700">✓ Interview Recommended — High Confidence</h3>
+                      <h3 className="text-base font-bold text-green-700">✓ Interview Recommended — {hybridInfo.confidence === 'high' ? 'High' : 'Medium'} Confidence</h3>
                       <p className="text-xs text-muted-foreground">Both algorithmic and AI assessment agree.</p>
                     </div>
                   </div>
                   {hybridInfo.aiReasoning && (
                     <p className="text-sm text-foreground/80">{hybridInfo.aiReasoning}</p>
+                  )}
+                  {hybridInfo.recruiterNote && (
+                    <p className="text-sm italic text-muted-foreground border-l-2 border-muted-foreground/30 pl-3">"{hybridInfo.recruiterNote}"</p>
                   )}
                   {hybridInfo.keyStrengths?.length > 0 && (
                     <ul className="space-y-1">
@@ -285,6 +333,7 @@ export default function ExternalCandidateProfile() {
                   {hybridInfo.recommendedPreset && (
                     <Badge variant="secondary" className="text-[10px]">Recommended: {hybridInfo.recommendedPreset.replace(/_/g, ' ')}</Badge>
                   )}
+                  <OwnershipSignals />
                 </>
               )}
 
@@ -300,6 +349,9 @@ export default function ExternalCandidateProfile() {
                   </div>
                   {hybridInfo.aiReasoning && (
                     <p className="text-sm text-foreground/80">{hybridInfo.aiReasoning}</p>
+                  )}
+                  {hybridInfo.recruiterNote && (
+                    <p className="text-sm italic text-muted-foreground border-l-2 border-muted-foreground/30 pl-3">"{hybridInfo.recruiterNote}"</p>
                   )}
                   {hybridInfo.concerns?.length > 0 && (
                     <ul className="space-y-1">
@@ -322,6 +374,7 @@ export default function ExternalCandidateProfile() {
                       </ul>
                     </div>
                   )}
+                  <OwnershipSignals />
                 </>
               )}
 
@@ -346,6 +399,9 @@ export default function ExternalCandidateProfile() {
                       <p className="text-sm text-foreground/80 italic">{hybridInfo.aiReasoning}</p>
                     </div>
                   )}
+                  {hybridInfo.recruiterNote && (
+                    <p className="text-sm italic text-muted-foreground border-l-2 border-muted-foreground/30 pl-3">"{hybridInfo.recruiterNote}"</p>
+                  )}
                   {hybridInfo.concerns?.length > 0 && (
                     <ul className="space-y-1">
                       {hybridInfo.concerns.map((c: string, i: number) => (
@@ -364,14 +420,13 @@ export default function ExternalCandidateProfile() {
                       ))}
                     </ul>
                   )}
-                  {hybridInfo.recruiterNote && (
-                    <p className="text-xs italic text-muted-foreground mt-2">"{hybridInfo.recruiterNote}"</p>
-                  )}
+                  <OwnershipSignals />
                 </>
               )}
             </CardContent>
           </Card>
-        )}
+          );
+        })()}
 
         {/* Section 1 — Candidate Information */}
         <Card>
