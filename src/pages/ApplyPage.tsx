@@ -101,12 +101,23 @@ function hybridWorthinessDecision(
   }
 
   if (algoWorthy && aiWorthy) {
+    const aiConf = aiJudgment?.ai_confidence;
+    const finalConfidence = aiConf === 'high' ? 'high' 
+      : aiConf === 'medium' ? 'medium'
+      : 'flagged' as const;
+    
+    // Low builder verb ratio overrides high confidence
+    const builderRatio = aiJudgment?.builder_verb_ratio || 0.5;
+    const adjustedConfidence = builderRatio < 0.4 ? 'flagged' : finalConfidence;
+
     return {
-      worthy: true,
-      confidence: 'high',
-      method: 'both_agree_worthy',
-      worthyScore: Math.max(algoScore, 0.75),
-      reasoning: 'Both algorithmic analysis and AI assessment agree this candidate is interview-worthy.',
+      worthy: adjustedConfidence !== 'flagged',
+      confidence: adjustedConfidence as 'high' | 'medium' | 'flagged',
+      method: adjustedConfidence === 'flagged' ? 'flagged_algo_overrides' as const : 'both_agree_worthy' as const,
+      worthyScore: adjustedConfidence === 'flagged' ? algoScore : Math.max(algoScore, 0.75),
+      reasoning: adjustedConfidence === 'flagged'
+        ? 'Both signals pass thresholds, but low ownership language detected in CV. Manager review recommended.'
+        : 'Both algorithmic analysis and AI assessment agree this candidate is interview-worthy.',
       aiReasoning: aiJudgment?.ai_reasoning || '',
       concerns: aiJudgment?.ai_concerns || [],
       keyStrengths: aiJudgment?.ai_key_strengths || [],
@@ -281,6 +292,10 @@ export default function ApplyPage() {
           keyStrengths: hybrid.keyStrengths,
           recommendedPreset: hybrid.recommendedPreset,
           recruiterNote: hybrid.recruiterNote,
+          builder_verb_ratio: aiJudgment?.builder_verb_ratio ?? null,
+          metrics_count: aiJudgment?.metrics_count ?? null,
+          verb_quality_assessment: aiJudgment?.verb_quality_assessment ?? null,
+          absence_analysis: aiJudgment?.absence_analysis ?? null,
         }),
         not_worthy_reasons: hybrid.concerns as any,
         submission_source: "candidate_self_submit",
