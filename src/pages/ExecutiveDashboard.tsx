@@ -2,11 +2,11 @@ import { PageHeader } from "@/components/PageHeader";
 import { StatCard } from "@/components/StatCard";
 import { ReadinessRing } from "@/components/ReadinessRing";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
-import { useEmployees, useAlgorithmResults, useInterviews, useBootcamps, useReorgMatches, useAllEmployeeSkills, useRoles } from "@/hooks/useData";
-import { Users, TrendingUp, AlertTriangle, MessageSquare, GraduationCap, DollarSign, UserPlus, Inbox } from "lucide-react";
+import { useEmployees, useAlgorithmResults, useInterviews, useReorgMatches, useAllEmployeeSkills, useRoles } from "@/hooks/useData";
+import { Users, AlertTriangle, MessageSquare, UserPlus, Inbox, Zap, Filter } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer, Legend } from "recharts";
+import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer, Legend, BarChart, Bar, Cell } from "recharts";
 import { useNavigate } from "react-router-dom";
 import { useMemo } from "react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -15,7 +15,6 @@ export default function ExecutiveDashboard() {
   const { data: employees, isLoading: loadingEmp } = useEmployees();
   const { data: results } = useAlgorithmResults();
   const { data: interviews } = useInterviews();
-  const { data: bootcamps } = useBootcamps();
   const { data: reorgMatches } = useReorgMatches();
   const { data: allSkills } = useAllEmployeeSkills();
   const { data: roles } = useRoles();
@@ -48,9 +47,7 @@ export default function ExecutiveDashboard() {
   }, [results]);
 
   const completedInterviews = interviews?.filter(i => i.status === 'completed').length || 0;
-  const activeBootcamps = bootcamps?.filter(b => b.status !== 'not_started').length || 0;
   const immediateMatches = reorgMatches?.filter(m => m.immediate_readiness).length || 0;
-  const hiringCostAvoided = immediateMatches * 45000;
 
   const { data: externalCandidates } = useQuery({
     queryKey: ["external_candidates_dashboard"],
@@ -62,6 +59,39 @@ export default function ExecutiveDashboard() {
   });
   const externalWorthyCount = externalCandidates?.filter((c: any) => c.interview_worthy).length || 0;
   const pendingReviewCount = externalCandidates?.filter((c: any) => c.submission_source === "candidate_self_submit" && c.manager_decision === "pending" && c.interview_worthy).length || 0;
+
+  // Decision Velocity: complete assessments in last 30 days
+  const { decisionVelocity, velocityBars } = useMemo(() => {
+    if (!results?.length) return { decisionVelocity: 0, velocityBars: [] };
+    const now = Date.now();
+    const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
+    const recentResults = results.filter(r => {
+      const t = r.computed_at ? new Date(r.computed_at).getTime() : 0;
+      return t >= thirtyDaysAgo;
+    });
+    // Daily bars for last 7 days
+    const bars = [];
+    for (let i = 6; i >= 0; i--) {
+      const dayStart = new Date();
+      dayStart.setHours(0, 0, 0, 0);
+      dayStart.setDate(dayStart.getDate() - i);
+      const dayEnd = new Date(dayStart);
+      dayEnd.setDate(dayEnd.getDate() + 1);
+      const count = results.filter(r => {
+        const t = r.computed_at ? new Date(r.computed_at).getTime() : 0;
+        return t >= dayStart.getTime() && t < dayEnd.getTime();
+      }).length;
+      bars.push({ day: i, count });
+    }
+    return { decisionVelocity: recentResults.length, velocityBars: bars };
+  }, [results]);
+
+  // Pipeline Conversion
+  const pipelineConversion = useMemo(() => {
+    if (!externalCandidates?.length) return 0;
+    const worthy = externalCandidates.filter((c: any) => c.interview_worthy).length;
+    return Math.round((worthy / externalCandidates.length) * 100);
+  }, [externalCandidates]);
 
   const radarData = useMemo(() => {
     const strategicSkills = ['ThermalEngineering', 'Python', 'MachineLearning', 'EVBatterySystems', 'AUTOSAR', 'ProjectManagement', 'DeepLearning', 'ManufacturingProcesses'];
@@ -78,20 +108,6 @@ export default function ExecutiveDashboard() {
     });
   }, [allSkills, roles]);
 
-  const heatmapSkills = ['EVBatterySystems', 'MachineLearning', 'Python', 'AUTOSAR', 'BatteryThermalMgmt', 'DeepLearning'];
-  const heatmapData = useMemo(() => {
-    if (!employees?.length || !allSkills?.length) return [];
-    return (employees || []).slice(0, 5).map(emp => {
-      const empSkills = allSkills.filter(s => s.employee_id === emp.id);
-      const row: any = { name: emp.name?.split(' ')[0] || '', empId: emp.id };
-      heatmapSkills.forEach(skill => {
-        const found = empSkills.find(s => s.skill_name === skill);
-        row[skill] = found?.proficiency || 0;
-      });
-      return row;
-    });
-  }, [employees, allSkills]);
-
   if (loadingEmp) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -100,44 +116,46 @@ export default function ExecutiveDashboard() {
     );
   }
 
-  const profBg: Record<number, string> = {
-    0: 'bg-status-red-light',
-    1: 'bg-status-amber-light',
-    2: 'bg-bmw-blue-light',
-    3: 'bg-status-green-light',
-  };
-  const profText: Record<number, string> = {
-    0: 'text-status-red',
-    1: 'text-status-amber',
-    2: 'text-bmw-blue',
-    3: 'text-status-green',
-  };
-
   return (
     <div>
       <PageHeader title="Executive Dashboard" subtitle="Workforce intelligence overview" />
       <div className="p-6 space-y-6">
         {/* Stat cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
           <StatCard icon={Users} label="Employees Profiled" value={employees?.length || 0} subtitle="Full HR + interview data" color="blue" />
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div>
-                  <StatCard icon={TrendingUp} label="Avg Readiness Score" value={`${avgReadiness}%`} subtitle="Three-layer score" color="green" />
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p className="text-xs">Three-layer score: Technical Match + Capability Match + Momentum Score</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
           <StatCard icon={AlertTriangle} label="Critical Skill Gaps" value={criticalGaps} subtitle="Require immediate action" color="red" />
           <StatCard icon={MessageSquare} label="Interviews Completed" value={completedInterviews} subtitle="Employee + manager combined" color="blue" />
-          <StatCard icon={GraduationCap} label="Active Bootcamps" value={activeBootcamps} subtitle="Personalized training plans" color="amber" />
-          <StatCard icon={DollarSign} label="Hiring Cost Avoided" value={hiringCostAvoided > 0 ? `€${(hiringCostAvoided / 1000000).toFixed(1)}M` : '€0'} subtitle="Through internal mobility" color="green" />
           <StatCard icon={UserPlus} label="External Pipeline" value={externalWorthyCount} subtitle="Interview-worthy candidates" color="purple" />
           <StatCard icon={Inbox} label="Pending Review" value={pendingReviewCount} subtitle="Self-submitted, AI-cleared" color="amber" />
+          {/* Decision Velocity */}
+          <div className="card-skillsight p-5 animate-fade-in">
+            <div className="flex items-start justify-between">
+              <div className="w-9 h-9 rounded-full flex items-center justify-center bg-bmw-blue/10">
+                <Zap className="h-[18px] w-[18px] text-bmw-blue" />
+              </div>
+            </div>
+            <div className="mt-3">
+              <p className="text-[13px] font-medium text-muted-foreground">Decision Velocity</p>
+              <p className="text-[28px] font-bold font-mono leading-tight mt-0.5">{decisionVelocity}</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">Assessments completed — last 30 days</p>
+              <div className="mt-2">
+                <ResponsiveContainer width="100%" height={40}>
+                  <BarChart data={velocityBars} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+                    <Bar dataKey="count" radius={[2, 2, 0, 0]}>
+                      {velocityBars.map((_, idx) => (
+                        <Cell key={idx} fill="hsl(213, 77%, 47%)" />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Pipeline Conversion standalone card */}
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+          <StatCard icon={Filter} label="Pipeline Conversion" value={`${pipelineConversion}%`} subtitle="External CVs cleared AI screening" color="green" />
         </div>
 
         {/* Main content 60/40 split */}
@@ -161,69 +179,10 @@ export default function ExecutiveDashboard() {
                 <p className="text-sm text-muted-foreground text-center py-8">No skill data available</p>
               )}
             </div>
-
-            {/* Neue Klasse Alignment */}
-            <div className="card-skillsight p-6 text-center">
-              <p className="text-xs font-semibold text-muted-foreground mb-2">Neue Klasse Alignment</p>
-              <p className="text-4xl font-bold font-mono">{avgReadiness}%</p>
-              <p className="text-xs text-muted-foreground mt-1">Based on Digital Boost · iFACTORY · EV Battery programs</p>
-              <div className="flex gap-1 mt-4 h-2 rounded-full overflow-hidden bg-secondary">
-                <div className="bg-status-red rounded-l-full" style={{ width: '50%', opacity: avgReadiness < 50 ? 1 : 0.2 }} />
-                <div className="bg-status-amber" style={{ width: '25%', opacity: avgReadiness >= 50 && avgReadiness < 75 ? 1 : 0.2 }} />
-                <div className="bg-status-green rounded-r-full" style={{ width: '25%', opacity: avgReadiness >= 75 ? 1 : 0.2 }} />
-              </div>
-              <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
-                <span>0-50%</span><span>50-75%</span><span>75-100%</span>
-              </div>
-            </div>
           </div>
 
           {/* Right column */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Heatmap */}
-            <div className="card-skillsight p-5">
-              <h3 className="text-[15px] font-semibold mb-4">Skills × People Heatmap</h3>
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs">
-                  <thead>
-                    <tr>
-                      <th className="text-left pb-2 font-medium text-muted-foreground pr-2"></th>
-                      {heatmapSkills.map(s => (
-                        <th key={s} className="pb-2 font-medium text-muted-foreground px-1" style={{ writingMode: 'vertical-lr', transform: 'rotate(180deg)', fontSize: 10 }}>
-                          {s.replace(/([A-Z])/g, ' $1').trim()}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {heatmapData.map((row, i) => (
-                      <tr key={i} className="cursor-pointer hover:bg-accent/50" onClick={() => {
-                        if (row.empId) navigate(`/employees/${row.empId}`);
-                      }}>
-                        <td className="py-1 pr-2 font-medium">{row.name}</td>
-                        {heatmapSkills.map(skill => {
-                          const val = row[skill] as number;
-                          return (
-                            <td key={skill} className="p-1 text-center">
-                              <div
-                                className={`w-6 h-6 rounded flex items-center justify-center text-[10px] font-mono font-semibold mx-auto ${profBg[val] || profBg[0]} ${profText[val] || profText[0]}`}
-                              >
-                                {val}
-                              </div>
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <p className="text-[10px] text-muted-foreground mt-2 leading-relaxed">
-                Reading this heatmap: <span className="text-status-red font-medium">Red = not yet present</span> · <span className="text-status-amber font-medium">Orange = beginner</span> · <span className="text-bmw-blue font-medium">Yellow = intermediate</span> · <span className="text-status-green font-medium">Green = expert</span>
-                <br />Skills ordered by BMW strategic priority (left = highest priority)
-              </p>
-            </div>
-
             {/* Internal Reorg Opportunity */}
             <div className="card-skillsight p-5">
               <h3 className="text-[15px] font-semibold mb-4">Internal Reorg Opportunity</h3>

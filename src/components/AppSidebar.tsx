@@ -1,11 +1,6 @@
 import {
   LayoutDashboard,
   Users,
-  MessageSquare,
-  UserCheck,
-  BarChart3,
-  
-  Target,
   Shuffle,
   Network,
   Briefcase,
@@ -30,20 +25,6 @@ const navSections = [
     items: [
       { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
       { title: "Employees", url: "/employees", icon: Users },
-    ],
-  },
-  {
-    label: "INTELLIGENCE",
-    items: [
-      { title: "Employee Interview", url: "/interview/employee", icon: MessageSquare },
-      { title: "Manager Interview", url: "/interview/manager", icon: UserCheck },
-      { title: "Analysis", url: "/analysis", icon: BarChart3 },
-    ],
-  },
-  {
-    label: "DEVELOPMENT",
-    items: [
-      { title: "Strategy Hub", url: "/strategy", icon: Target },
     ],
   },
   {
