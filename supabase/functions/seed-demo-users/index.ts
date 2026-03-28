@@ -19,9 +19,41 @@ serve(async (req) => {
     const { data: existing } = await supabaseAdmin
       .from("user_profiles")
       .select("email")
-      .in("email", ["manager@bmw-skillsight.com", "thomas.bauer@bmw-skillsight.com", "anna.keller@bmw-skillsight.com", "jens.richter@bmw.de"]);
+      .in("email", ["manager@bmw-skillsight.com", "thomas.bauer@bmw-skillsight.com", "anna.keller@bmw-skillsight.com", "jens.richter@bmw.de", "marcus.schmidt@bmw.de"]);
 
     const results: string[] = [];
+
+    // Create Employee account (Marcus Schmidt)
+    const marcusExists = existing?.some(e => e.email === "marcus.schmidt@bmw.de");
+    if (!marcusExists) {
+      const { data: marcus } = await supabaseAdmin
+        .from("employees")
+        .select("id")
+        .eq("name", "Marcus Schmidt")
+        .limit(1)
+        .single();
+
+      const { data: marcusUser, error: marcusErr } = await supabaseAdmin.auth.admin.createUser({
+        email: "marcus.schmidt@bmw.de",
+        password: "SkillSight2026!",
+        email_confirm: true,
+        user_metadata: { full_name: "Marcus Schmidt" },
+      });
+
+      if (marcusErr) {
+        console.error("Marcus creation error:", marcusErr);
+        results.push(`Marcus error: ${marcusErr.message}`);
+      } else if (marcusUser?.user) {
+        await supabaseAdmin.from("user_profiles").insert({
+          id: marcusUser.user.id,
+          email: "marcus.schmidt@bmw.de",
+          role: "employee",
+          employee_id: marcus?.id || null,
+          full_name: "Marcus Schmidt",
+        });
+        results.push("Employee (Marcus) created");
+      }
+    }
 
     // Create Manager account
     const managerExists = existing?.some(e => e.email === "manager@bmw-skillsight.com");
