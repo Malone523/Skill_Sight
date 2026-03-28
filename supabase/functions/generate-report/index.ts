@@ -224,33 +224,11 @@ ${managerInsights ? `MANAGER INSIGHTS:\n${JSON.stringify(managerInsights, null, 
       throw new Error(`AI API returned ${response.status}: ${errText.substring(0, 200)}`);
     }
 
-    const rawText = await response.text();
+    const data = await response.json();
+    // Anthropic format: data.content[0].text — this IS the markdown report
+    const reportMarkdown = data.content?.[0]?.text || "Report generation failed.";
 
-    let data;
-    try {
-      data = JSON.parse(rawText);
-    } catch {
-      let cleaned = rawText
-        .replace(/```json\s*/gi, "")
-        .replace(/```\s*/g, "")
-        .trim();
-      const jsonStart = cleaned.search(/[\{\[]/);
-      const jsonEnd = cleaned.lastIndexOf(jsonStart !== -1 && cleaned[jsonStart] === "[" ? "]" : "}");
-      if (jsonStart !== -1 && jsonEnd !== -1) {
-        cleaned = cleaned.substring(jsonStart, jsonEnd + 1);
-      }
-      try {
-        data = JSON.parse(cleaned);
-      } catch {
-        return new Response(JSON.stringify({ report: rawText }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-    }
-
-    const report = data.choices?.[0]?.message?.content || data.report || rawText || "Report generation failed.";
-
-    return new Response(JSON.stringify({ report }), {
+    return new Response(JSON.stringify({ reportMarkdown, report: reportMarkdown }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {

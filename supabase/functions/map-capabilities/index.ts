@@ -133,6 +133,30 @@ serve(async (req) => {
       .map((m: any) => `${m.role === "user" ? employeeName : "SkillSight AI"}: ${m.content}`)
       .join("\n\n");
 
+    // Capability signal pre-scan
+    const allEmployeeText = (conversationHistory || [])
+      .filter((m: any) => m.role === "user")
+      .map((m: any) => m.content)
+      .join(" ")
+      .toLowerCase();
+
+    const capabilityPreScan = {
+      systems_thinking: allEmployeeText.includes('system') && (allEmployeeText.includes('design') || allEmployeeText.includes('architecture') || allEmployeeText.includes('overall')),
+      debugging: allEmployeeText.includes('debug') || allEmployeeText.includes('diagnos') || allEmployeeText.includes('root cause') || allEmployeeText.includes('traced'),
+      data_driven: allEmployeeText.includes('data') && (allEmployeeText.includes('measured') || allEmployeeText.includes('metric') || allEmployeeText.includes('result')),
+      ownership: (allEmployeeText.includes('i built') || allEmployeeText.includes('i designed') || allEmployeeText.includes('i implemented') || allEmployeeText.includes('i led')),
+      cross_functional: allEmployeeText.includes('cross') || (allEmployeeText.includes('other team') || allEmployeeText.includes('different team')),
+      automation: allEmployeeText.includes('automat') || allEmployeeText.includes('script') || allEmployeeText.includes('pipeline'),
+    };
+
+    const detectedCapabilities = Object.entries(capabilityPreScan)
+      .filter(([, v]) => v)
+      .map(([k]) => k.replace(/_/g, ' '));
+
+    const preDetectedHints = detectedCapabilities.length > 0
+      ? `\n\nPRE-DETECTED CAPABILITY SIGNALS (keyword scan — validate with full transcript):\nCapabilities likely present: ${detectedCapabilities.join(', ')}\nThese signals were found in the employee's words. The AI assessment should find DEMONSTRATED capabilities for these at minimum.`
+      : '';
+
     const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
     if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY is not configured");
 
@@ -157,6 +181,7 @@ serve(async (req) => {
     Existing HR Skills: ${JSON.stringify(existingSkills || {})}
     Interview Transcript:
     ${transcript}
+    ${preDetectedHints}
     Analyze the behavioral evidence in this transcript. Infer capabilities from what they DID, not what they said they know. Classify every skill gap as progression or foundational. Assess their real starting point for each gap.`,
           },
         ],
@@ -170,7 +195,8 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    const raw = data.choices?.[0]?.message?.content || "";
+    // Anthropic format: data.content[0].text
+    const raw = data.content?.[0]?.text || "";
     const match = raw.match(/\{[\s\S]*\}/);
     const capabilities = match ? JSON.parse(match[0]) : null;
 

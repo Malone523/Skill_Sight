@@ -49,7 +49,8 @@ serve(async (req) => {
     });
 
     const data = await response.json();
-    const raw = data.choices?.[0]?.message?.content || "";
+    // Anthropic format: data.content[0].text
+    const raw = data.content?.[0]?.text || "";
     const match = raw.match(/\{[\s\S]*\}/);
     const interpreted = match ? JSON.parse(match[0]) : null;
 
