@@ -154,20 +154,23 @@ export default function AnalysisPage() {
   }, [cosine, jaccBin, jaccW, gapScore, gapAnalysis]);
 
   const capabilityFactors = useMemo(() => {
-    const exceptional = interviewSurplus.filter(s => s.rating === 'EXCEPTIONAL').map(s => s.skill);
-    const demonstrated = interviewSurplus.filter(s => s.rating === 'DEMONSTRATED').map(s => s.skill);
-    const highRelevance = interviewSurplus.filter(s => s.relevance === 'HIGH' || s.relevance === 'CRITICAL');
-    const strongHighRelevance = highRelevance.filter(s => ['DEMONSTRATED', 'EXCEPTIONAL'].includes(s.rating));
+    // Use capabilityProfile from map-capabilities if available, fallback to interviewSurplus
+    const allCaps = capabilityProfile ? Object.entries(capabilityProfile) : [];
+    const exceptional = allCaps.filter(([, c]: [string, any]) => c.rating === 'EXCEPTIONAL');
+    const demonstrated = allCaps.filter(([, c]: [string, any]) => c.rating === 'DEMONSTRATED');
+    const highRelevance = allCaps.filter(([, c]: [string, any]) => c.relevance_to_role === 'HIGH');
+    const strongHighRelevance = highRelevance.filter(([, c]: [string, any]) => ['DEMONSTRATED', 'EXCEPTIONAL'].includes(c.rating));
+
     const factors = [
-      { label: 'EXCEPTIONAL capabilities', value: exceptional.length > 0 ? exceptional.join(', ') : 'None assessed', note: 'top-tier demonstrated skills' },
-      { label: 'DEMONSTRATED capabilities', value: demonstrated.length > 0 ? demonstrated.join(', ') : 'None assessed', note: 'solidly proven in interview' },
+      { label: 'EXCEPTIONAL capabilities', value: exceptional.length > 0 ? exceptional.map(([name]) => name).join(', ') : 'None at this level', note: 'top-tier demonstrated thinking patterns' },
+      { label: 'DEMONSTRATED capabilities', value: demonstrated.length > 0 ? demonstrated.map(([name]) => name).join(', ') : 'None confirmed', note: 'solidly evidenced in interview behavior' },
       { label: 'High-relevance capabilities assessed', value: `${highRelevance.length}`, note: 'directly relevant to target role' },
-      { label: 'Strong high-relevance', value: `${strongHighRelevance.length} of ${highRelevance.length}`, note: highRelevance.length > 0 ? `${Math.round(strongHighRelevance.length / highRelevance.length * 100)}%` : 'N/A' },
+      { label: 'Strong high-relevance', value: highRelevance.length > 0 ? `${strongHighRelevance.length} of ${highRelevance.length}` : 'Requires capability interview data', note: highRelevance.length > 0 ? 'confirmed through behavioral evidence' : 'Run interview to populate this' },
     ];
-    const standoutItem = interviewSurplus.find(s => s.rating === 'EXCEPTIONAL');
-    const standout = standoutItem ? `"${standoutItem.skill}" rated EXCEPTIONAL${standoutItem.relevance ? ` with ${standoutItem.relevance} role relevance` : ''}` : '';
-    return { factors, standout };
-  }, [interviewSurplus]);
+    const standoutItem = exceptional[0] || demonstrated[0];
+    const standout = standoutItem ? `Standout: "${standoutItem[0]}" — ${(standoutItem[1] as any).inferred_from?.slice(0, 100) || (standoutItem[1] as any).evidence?.slice(0, 100) || ''}` : '';
+    return { factors, standout, allCaps };
+  }, [capabilityProfile, interviewSurplus]);
 
   const momentumFactors = useMemo(() => {
     if (!momentumBreakdown) return { factors: [], standout: '' };
