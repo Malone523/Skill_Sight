@@ -79,7 +79,7 @@ export default function AnalysisPage() {
   const threeLayerScore = (latestResult as any)?.three_layer_score ?? null;
   const technicalMatch = (latestResult as any)?.technical_match ?? latestResult?.overall_readiness ?? localResults?.overallReadiness ?? 0;
   const capabilityMatch = (latestResult as any)?.capability_match ?? 0.5;
-  const momentumScore = (latestResult as any)?.momentum_score ?? 0;
+  const momentumScore = (latestResult as any)?.momentum_score ?? null;
   const momentumBreakdown = (latestResult as any)?.momentum_breakdown as any || null;
   const roleType = (latestResult as any)?.role_type || 'technical_specialist';
   const ahpWeightsUsed = (latestResult as any)?.ahp_weights_used as any || null;
