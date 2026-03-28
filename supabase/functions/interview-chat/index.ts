@@ -446,7 +446,7 @@ serve(async (req) => {
   }
 
   try {
-    const { messages = [], interviewType, employeeName, employeeTitle, roleName, targetSkills, managerName, presetPack } = await req.json();
+    const { messages = [], interviewType, employeeName, employeeTitle, roleName, targetSkills, managerName, presetPack, forceComplete, questionNumber, maxQuestions } = await req.json();
 
     const apiKey = Deno.env.get("LOVABLE_API_KEY");
     if (!apiKey) {
@@ -464,6 +464,54 @@ serve(async (req) => {
     const lastUserClassification = lastUserMessage ? classifyUserMessage(lastUserMessage) : null;
     const recentSubstantiveAnswerStreak = getRecentSubstantiveAnswerStreak(typedMessages);
     const shouldForceAdvance = recentSubstantiveAnswerStreak >= 3 && lastUserClassification === "substantive";
+
+    // Force completion: extract assessment from conversation without asking more questions
+    const isAtLimit = questionNumber && maxQuestions && questionNumber >= maxQuestions;
+    if (forceComplete || isAtLimit) {
+      const extractionPrompt = interviewType === "manager"
+        ? `You have completed a manager interview about ${employeeName} (${employeeTitle}). Based on the entire conversation, produce ONLY a JSON block with the manager_assessment. Do NOT ask any more questions. Output format:
+\`\`\`json
+{"isComplete": true, "manager_assessment": {"observed_skills": {}, "potential_indicators": [], "concerns": [], "learning_agility_observed": null, "leadership_potential_observed": null, "manager_confidence_score": null, "hidden_role_suggestion": null}}
+\`\`\``
+        : `You have completed an employee interview. Based on the entire conversation, produce ONLY a JSON block with extracted data. Do NOT ask any more questions.`;
+
+      const extractionResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: [
+            { role: "system", content: extractionPrompt },
+            ...typedMessages.map(m => ({ role: m.role === "ai" ? "assistant" : "user", content: m.content })),
+          ],
+          temperature: 0.3,
+          max_tokens: 2000,
+        }),
+      });
+
+      const extractionData = await extractionResponse.json();
+      const extractionContent = extractionData?.choices?.[0]?.message?.content || "";
+      
+      let extractedData = null;
+      const jsonMatch = extractionContent.match(/```json\s*([\s\S]*?)```/) || extractionContent.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        try {
+          const raw = jsonMatch[1] || jsonMatch[0];
+          const parsed = JSON.parse(raw);
+          extractedData = parsed.manager_assessment ? { manager_assessment: parsed.manager_assessment } : parsed;
+        } catch { /* ignore parse errors */ }
+      }
+
+      return new Response(
+        JSON.stringify({
+          message: "Thank you — I now have a comprehensive picture. The assessment is being compiled.",
+          isComplete: true,
+          extractedData: extractedData || { manager_assessment: { observed_skills: {}, potential_indicators: [], concerns: [] } },
+          questionDelta: 0,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     if (lastUserMessage) {
       if (lastUserClassification === "command") {
@@ -526,6 +574,15 @@ serve(async (req) => {
     if (presetPack && PRESET_BLOCKS[presetPack]) {
       systemPrompt += `\n\n${PRESET_BLOCKS[presetPack]}`;
       systemPrompt += `\n\nIMPORTANT: These are starting INSPIRATIONS only. Do not follow them rigidly. If the employee's answers take the conversation somewhere more interesting and relevant, follow that thread. Always prioritise rich evidence over topic coverage.`;
+    }
+
+    // Add question limit awareness
+    const qNum = questionNumber || typedMessages.filter(m => m.role === "ai").length + 1;
+    const qMax = maxQuestions || 10;
+    if (qNum >= qMax - 2) {
+      systemPrompt += `\n\nIMPORTANT: You are on question ${qNum} of ${qMax}. You MUST begin wrapping up. On your next response, thank the manager and output your complete JSON assessment block. Do NOT ask another question.`;
+    } else if (qNum >= qMax - 4) {
+      systemPrompt += `\n\nNote: You are on question ${qNum} of ${qMax}. Start focusing on the most important remaining areas.`;
     }
 
     const runtimePrompt = [
