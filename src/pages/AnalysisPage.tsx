@@ -847,11 +847,12 @@ export default function AnalysisPage() {
 // ─── Score With Factors Component ───────────────────────────────────
 
 function ScoreWithFactors({
-  title, score, color, factors, standout,
+  title, score, color, factors, standout, capabilityDetails,
 }: {
   title: string; score: number; color: string;
   factors: { label: string; value: string; note: string }[];
   standout?: string;
+  capabilityDetails?: [string, any][];
 }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -886,6 +887,17 @@ function ScoreWithFactors({
                 <p className="text-xs text-muted-foreground italic">{standout}</p>
               </div>
             )}
+            {/* Show behavioral inference details for capability cards */}
+            {capabilityDetails && capabilityDetails
+              .filter(([, c]) => ['DEMONSTRATED', 'EXCEPTIONAL'].includes(c.rating))
+              .slice(0, 4)
+              .map(([capName, capData]) => (
+                <div key={capName} className="mt-2 p-2 bg-secondary rounded-md">
+                  <p className="text-xs font-semibold">{capName} — <span className={capData.rating === 'EXCEPTIONAL' ? 'text-green-600 dark:text-green-400' : 'text-primary'}>{capData.rating}</span></p>
+                  {capData.inferred_from && <p className="text-[11px] text-muted-foreground italic mt-0.5">Inferred from: "{capData.inferred_from.slice(0, 120)}"</p>}
+                </div>
+              ))
+            }
           </div>
         )}
       </CardContent>
