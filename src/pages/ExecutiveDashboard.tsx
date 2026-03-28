@@ -3,13 +3,12 @@ import { StatCard } from "@/components/StatCard";
 import { ReadinessRing } from "@/components/ReadinessRing";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { useEmployees, useAlgorithmResults, useInterviews, useReorgMatches, useAllEmployeeSkills, useRoles } from "@/hooks/useData";
-import { Users, AlertTriangle, MessageSquare, UserPlus, Inbox, Zap, Filter } from "lucide-react";
+import { Users, AlertTriangle, MessageSquare, UserPlus, Inbox, UserCheck, Plus } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer, Legend, BarChart, Bar, Cell } from "recharts";
+import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer, Legend } from "recharts";
 import { useNavigate } from "react-router-dom";
 import { useMemo } from "react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export default function ExecutiveDashboard() {
   const { data: employees, isLoading: loadingEmp } = useEmployees();
@@ -19,21 +18,6 @@ export default function ExecutiveDashboard() {
   const { data: allSkills } = useAllEmployeeSkills();
   const { data: roles } = useRoles();
   const navigate = useNavigate();
-
-  const avgReadiness = useMemo(() => {
-    if (!results?.length) return 0;
-    const withScore = results.filter(r => {
-      const tls = (r as any).three_layer_score;
-      return tls != null || r.final_readiness != null;
-    });
-    if (!withScore.length) return 0;
-    return Math.round(
-      (withScore.reduce((s, r) => {
-        const tls = (r as any).three_layer_score;
-        return s + (tls != null ? tls : (r.final_readiness || 0));
-      }, 0) / withScore.length) * 100
-    );
-  }, [results]);
 
   const criticalGaps = useMemo(() => {
     if (!results?.length) return 0;
@@ -47,7 +31,6 @@ export default function ExecutiveDashboard() {
   }, [results]);
 
   const completedInterviews = interviews?.filter(i => i.status === 'completed').length || 0;
-  const immediateMatches = reorgMatches?.filter(m => m.immediate_readiness).length || 0;
 
   const { data: externalCandidates } = useQuery({
     queryKey: ["external_candidates_dashboard"],
@@ -60,43 +43,63 @@ export default function ExecutiveDashboard() {
   const externalWorthyCount = externalCandidates?.filter((c: any) => c.interview_worthy).length || 0;
   const pendingReviewCount = externalCandidates?.filter((c: any) => c.submission_source === "candidate_self_submit" && c.manager_decision === "pending" && c.interview_worthy).length || 0;
 
-  // Decision Velocity: complete assessments in last 30 days
-  const { decisionVelocity, velocityBars } = useMemo(() => {
-    if (!results?.length) return { decisionVelocity: 0, velocityBars: [] };
+  // Critical Hiring Priorities
+  const hiringPriorities = useMemo(() => {
+    if (!roles?.length) return [];
     const now = Date.now();
     const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
-    const recentResults = results.filter(r => {
-      const t = r.computed_at ? new Date(r.computed_at).getTime() : 0;
-      return t >= thirtyDaysAgo;
-    });
-    // Daily bars for last 7 days
-    const bars = [];
-    for (let i = 6; i >= 0; i--) {
-      const dayStart = new Date();
-      dayStart.setHours(0, 0, 0, 0);
-      dayStart.setDate(dayStart.getDate() - i);
-      const dayEnd = new Date(dayStart);
-      dayEnd.setDate(dayEnd.getDate() + 1);
-      const count = results.filter(r => {
-        const t = r.computed_at ? new Date(r.computed_at).getTime() : 0;
-        return t >= dayStart.getTime() && t < dayEnd.getTime();
-      }).length;
-      bars.push({ day: i, count });
-    }
-    return { decisionVelocity: recentResults.length, velocityBars: bars };
-  }, [results]);
 
-  // Pipeline Conversion
-  const pipelineConversion = useMemo(() => {
-    if (!externalCandidates?.length) return 0;
-    const worthy = externalCandidates.filter((c: any) => c.interview_worthy).length;
-    return Math.round((worthy / externalCandidates.length) * 100);
-  }, [externalCandidates]);
+    return roles.map(role => {
+      // Best internal readiness for this role
+      const roleResults = results?.filter(r => r.role_id === role.id) || [];
+      const bestReadiness = roleResults.length
+        ? Math.max(...roleResults.map(r => {
+            const tls = (r as any).three_layer_score;
+            return tls != null ? Math.round(tls * 100) : Math.round((r.final_readiness || 0) * 100);
+          }))
+        : 0;
+      const bestResult = roleResults.length
+        ? roleResults.reduce((best, r) => {
+            const tls = (r as any).three_layer_score;
+            const score = tls != null ? tls : (r.final_readiness || 0);
+            const bestScore = (best as any).three_layer_score != null ? (best as any).three_layer_score : (best.final_readiness || 0);
+            return score > bestScore ? r : best;
+          })
+        : null;
+      const bestEmployee = bestResult ? employees?.find(e => e.id === bestResult.employee_id) : null;
+
+      // External worthy count for this role
+      const worthyExternals = externalCandidates?.filter((c: any) => c.role_id === role.id && c.interview_worthy).length || 0;
+
+      // Recent interview activity
+      const recentInterview = interviews?.some(i => i.target_role_id === role.id && i.completed_at && new Date(i.completed_at).getTime() > thirtyDaysAgo);
+
+      // Urgency
+      let urgency: 'HIGH' | 'MEDIUM' | 'LOW';
+      if (bestReadiness < 60) urgency = 'HIGH';
+      else if (bestReadiness <= 75) urgency = 'MEDIUM';
+      else urgency = 'LOW';
+
+      // Urgency score for sorting (lower = more urgent)
+      let urgencyScore = bestReadiness;
+      if (worthyExternals === 0) urgencyScore -= 10;
+      if (!recentInterview) urgencyScore -= 5;
+
+      return {
+        role,
+        bestReadiness,
+        bestEmployee,
+        worthyExternals,
+        recentInterview,
+        urgency,
+        urgencyScore,
+      };
+    }).sort((a, b) => a.urgencyScore - b.urgencyScore).slice(0, 4);
+  }, [roles, results, employees, externalCandidates, interviews]);
 
   const radarData = useMemo(() => {
     const strategicSkills = ['ThermalEngineering', 'Python', 'MachineLearning', 'EVBatterySystems', 'AUTOSAR', 'ProjectManagement', 'DeepLearning', 'ManufacturingProcesses'];
     if (!allSkills?.length || !roles?.length) return [];
-
     return strategicSkills.map(skill => {
       const skillEntries = allSkills.filter(s => s.skill_name === skill);
       const avgProf = skillEntries.length ? skillEntries.reduce((s, e) => s + (e.proficiency || 0), 0) / skillEntries.length : 0;
@@ -116,53 +119,153 @@ export default function ExecutiveDashboard() {
     );
   }
 
+  const urgencyColors = {
+    HIGH: { border: '#dc3545', bg: 'bg-destructive', text: 'text-destructive', badgeBg: 'bg-destructive/10 text-destructive', barBg: '#dc3545' },
+    MEDIUM: { border: '#f59e0b', bg: 'bg-status-amber', text: 'text-status-amber', badgeBg: 'bg-status-amber-light text-status-amber', barBg: '#f59e0b' },
+    LOW: { border: '#22c55e', bg: 'bg-status-green', text: 'text-status-green', badgeBg: 'bg-status-green-light text-status-green', barBg: '#22c55e' },
+  };
+
+  const openRoleCount = roles?.filter(r => r.is_open).length || roles?.length || 0;
+  const emptySlots = Math.max(0, 4 - hiringPriorities.length);
+
   return (
     <div>
       <PageHeader title="Executive Dashboard" subtitle="Workforce intelligence overview" />
       <div className="p-6 space-y-6">
         {/* Stat cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
           <StatCard icon={Users} label="Employees Profiled" value={employees?.length || 0} subtitle="Full HR + interview data" color="blue" />
           <StatCard icon={AlertTriangle} label="Critical Skill Gaps" value={criticalGaps} subtitle="Require immediate action" color="red" />
           <StatCard icon={MessageSquare} label="Interviews Completed" value={completedInterviews} subtitle="Employee + manager combined" color="blue" />
           <StatCard icon={UserPlus} label="External Pipeline" value={externalWorthyCount} subtitle="Interview-worthy candidates" color="purple" />
           <StatCard icon={Inbox} label="Pending Review" value={pendingReviewCount} subtitle="Self-submitted, AI-cleared" color="amber" />
-          {/* Decision Velocity */}
-          <div className="card-skillsight p-5 animate-fade-in">
-            <div className="flex items-start justify-between">
-              <div className="w-9 h-9 rounded-full flex items-center justify-center bg-bmw-blue/10">
-                <Zap className="h-[18px] w-[18px] text-bmw-blue" />
-              </div>
-            </div>
-            <div className="mt-3">
-              <p className="text-[13px] font-medium text-muted-foreground">Decision Velocity</p>
-              <p className="text-[28px] font-bold font-mono leading-tight mt-0.5">{decisionVelocity}</p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">Assessments completed — last 30 days</p>
-              <div className="mt-2">
-                <ResponsiveContainer width="100%" height={40}>
-                  <BarChart data={velocityBars} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
-                    <Bar dataKey="count" radius={[2, 2, 0, 0]}>
-                      {velocityBars.map((_, idx) => (
-                        <Cell key={idx} fill="hsl(213, 77%, 47%)" />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          </div>
         </div>
 
-        {/* Pipeline Conversion standalone card */}
-        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-          <StatCard icon={Filter} label="Pipeline Conversion" value={`${pipelineConversion}%`} subtitle="External CVs cleared AI screening" color="green" />
+        {/* Critical Hiring Priorities */}
+        <div className="card-skillsight p-6">
+          <div className="flex items-start justify-between mb-5">
+            <div>
+              <h2 className="text-[20px] font-bold">Critical Hiring Priorities</h2>
+              <p className="text-[13px] text-muted-foreground mt-0.5">Roles requiring immediate action — ranked by urgency</p>
+            </div>
+            <span className="px-2.5 py-1 rounded-full bg-secondary text-xs font-semibold font-mono text-foreground">
+              {openRoleCount} open
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {hiringPriorities.map(({ role, bestReadiness, bestEmployee, worthyExternals, urgency }) => {
+              const colors = urgencyColors[urgency];
+              const gap = 100 - bestReadiness;
+              return (
+                <div
+                  key={role.id}
+                  className="bg-card rounded-[14px] border border-border p-5 relative overflow-hidden"
+                  style={{ borderLeftWidth: 4, borderLeftColor: colors.border }}
+                >
+                  {/* Top row */}
+                  <div className="flex items-start justify-between mb-1">
+                    <h3 className="text-[16px] font-bold leading-tight">{role.title}</h3>
+                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0 ${colors.badgeBg}`}>
+                      {urgency}
+                    </span>
+                  </div>
+                  <p className="text-[13px] text-muted-foreground mb-4">{role.department || 'No department'}</p>
+
+                  {/* Best internal candidate */}
+                  <div className="mb-3">
+                    <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-1.5">Best Internal Match:</p>
+                    {bestEmployee ? (
+                      <div className="flex items-center gap-2">
+                        <span className="text-[13px] font-medium truncate">{bestEmployee.name}</span>
+                        <div className="flex-1 h-2 rounded-full bg-secondary overflow-hidden">
+                          <div className="h-full rounded-full transition-all" style={{ width: `${bestReadiness}%`, backgroundColor: colors.barBg }} />
+                        </div>
+                        <span className="text-[12px] font-mono font-semibold" style={{ color: colors.border }}>{bestReadiness}%</span>
+                      </div>
+                    ) : (
+                      <p className="text-[12px] italic text-destructive">No candidates assessed yet</p>
+                    )}
+                  </div>
+
+                  {/* External pipeline */}
+                  <div className="mb-4">
+                    <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">External Pipeline:</p>
+                    {worthyExternals > 0 ? (
+                      <span className="text-[13px] text-status-green font-medium flex items-center gap-1">
+                        <UserCheck className="h-3.5 w-3.5" /> {worthyExternals} qualified
+                      </span>
+                    ) : (
+                      <span className="text-[13px] text-destructive font-medium">0 qualified externals</span>
+                    )}
+                  </div>
+
+                  {/* Stats row */}
+                  <div className="flex items-center gap-4 mb-4 pb-4 border-b border-border">
+                    <div>
+                      <span className="text-[11px] text-muted-foreground">Internal Best: </span>
+                      <span className="text-[13px] font-mono font-bold" style={{ color: colors.border }}>{bestReadiness}%</span>
+                    </div>
+                    <div>
+                      <span className="text-[11px] text-muted-foreground">Gap to Ready: </span>
+                      <span className="text-[13px] font-mono font-bold text-destructive">{gap}%</span>
+                    </div>
+                  </div>
+
+                  {/* Action button */}
+                  {urgency === 'HIGH' && (
+                    <button
+                      onClick={() => navigate('/reorg')}
+                      className="w-full py-2 rounded-lg text-[14px] font-semibold text-white transition-colors"
+                      style={{ backgroundColor: '#dc3545' }}
+                    >
+                      Urgent — Start Assessment
+                    </button>
+                  )}
+                  {urgency === 'MEDIUM' && (
+                    <button
+                      onClick={() => navigate('/reorg')}
+                      className="w-full py-2 rounded-lg text-[14px] font-semibold text-white transition-colors"
+                      style={{ backgroundColor: '#f59e0b' }}
+                    >
+                      Review Candidates
+                    </button>
+                  )}
+                  {urgency === 'LOW' && (
+                    <button
+                      onClick={() => navigate('/reorg')}
+                      className="w-full py-2 rounded-lg text-[14px] font-semibold border-2 transition-colors bg-transparent"
+                      style={{ borderColor: '#22c55e', color: '#22c55e' }}
+                    >
+                      Monitor
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+
+            {/* Empty slots */}
+            {Array.from({ length: emptySlots }).map((_, i) => (
+              <div
+                key={`empty-${i}`}
+                className="rounded-[14px] border-2 border-dashed border-border p-5 flex flex-col items-center justify-center gap-2 min-h-[200px] cursor-pointer hover:bg-accent/30 transition-colors"
+                onClick={() => navigate('/roles')}
+              >
+                <Plus className="h-8 w-8 text-muted-foreground/50" />
+                <p className="text-[13px] text-muted-foreground text-center">Add a role in Roles Manager to track hiring urgency</p>
+              </div>
+            ))}
+          </div>
+
+          <p className="text-[13px] text-muted-foreground italic text-center mt-5">
+            Urgency is computed from internal candidate readiness, external pipeline depth, and assessment recency — updated in real time.
+          </p>
         </div>
 
         {/* Main content 60/40 split */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           {/* Left column */}
           <div className="lg:col-span-3 space-y-6">
-            {/* Radar Chart */}
             <div className="card-skillsight p-5">
               <h3 className="text-[15px] font-semibold mb-4">Skill Coverage vs Strategic Requirements</h3>
               {radarData.length > 0 ? (
@@ -183,7 +286,6 @@ export default function ExecutiveDashboard() {
 
           {/* Right column */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Internal Reorg Opportunity */}
             <div className="card-skillsight p-5">
               <h3 className="text-[15px] font-semibold mb-4">Internal Reorg Opportunity</h3>
               {roles?.map(role => (
@@ -203,7 +305,6 @@ export default function ExecutiveDashboard() {
               </div>
             </div>
 
-            {/* Recent Assessments */}
             <div className="card-skillsight p-5">
               <h3 className="text-[15px] font-semibold mb-4">Recent Assessments</h3>
               {results?.length ? results.slice(0, 5).map((r, i) => {
@@ -230,10 +331,9 @@ export default function ExecutiveDashboard() {
               )}
             </div>
 
-            {/* Pending Applications */}
             <div className="card-skillsight p-5">
               <div className="flex items-center gap-2 mb-4">
-                <span className="w-2 h-2 rounded-full bg-yellow-500" />
+                <span className="w-2 h-2 rounded-full bg-status-amber" />
                 <h3 className="text-[15px] font-semibold">New Applications — Pending Your Review</h3>
               </div>
               {pendingReviewCount > 0 ? (
