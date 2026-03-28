@@ -412,6 +412,7 @@ export default function MyInterview() {
             roleType,
             threeLayerScore: threeLayer,
             ahpWeightsUsed: { weights: ahpWeights, roleType },
+            capabilityData: capabilityData || null,
           },
         });
 
