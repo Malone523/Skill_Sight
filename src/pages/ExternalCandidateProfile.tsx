@@ -149,17 +149,6 @@ export default function ExternalCandidateProfile() {
 
   const conversationHistory = interview?.conversation_history as any[] || [];
 
-  // Risk factors from report
-  const riskFactors = useMemo(() => {
-    if (!report) return [];
-    const riskSection = report.match(/### Risk Factors\n([\s\S]*?)(?=\n### |\n## |$)/);
-    if (!riskSection) return [];
-    const risks: { name: string; level: string; description: string }[] = [];
-    const riskMatches = riskSection[1].matchAll(/\*\*(.+?)\*\*\s*·\s*(LOW|MEDIUM|HIGH)\n(.+?)(?=\n\*\*|\n$|$)/gs);
-    for (const match of riskMatches) risks.push({ name: match[1].trim(), level: match[2].trim(), description: match[3].trim() });
-    return risks;
-  }, [report]);
-
   return (
     <div>
       <PageHeader
