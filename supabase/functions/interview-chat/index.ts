@@ -222,7 +222,8 @@ Key signals to listen for: adaptability, empathy, communication range, political
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 const normalizeText = (value: string) => value.toLowerCase().trim().replace(/\s+/g, " ");
@@ -281,8 +282,10 @@ const unwrapQuestionPrompt = (value: string) => {
   return current;
 };
 
-const isRestartCommand = (value: string) => /^(restart( convo| conversation)?|start over|reset|begin again|redo)\b/.test(normalizeText(value));
-const isAdvanceCommand = (value: string) => /^(next|skip|move on|continue|another question|next question|pass)\b[.!?]*$/.test(normalizeText(value));
+const isRestartCommand = (value: string) =>
+  /^(restart( convo| conversation)?|start over|reset|begin again|redo)\b/.test(normalizeText(value));
+const isAdvanceCommand = (value: string) =>
+  /^(next|skip|move on|continue|another question|next question|pass)\b[.!?]*$/.test(normalizeText(value));
 const isVagueNonAnswer = (value: string) => {
   const normalized = normalizeText(value).replace(/[.!?]+$/g, "");
   return new Set([
@@ -362,14 +365,14 @@ const buildForcedAdvanceReply = (interviewType: string, targetSkills: string[] =
     if (nextUnusedSkill) {
       return `Thanks — that gives me useful context. Let's shift to ${nextUnusedSkill}. What's a specific time you observed this employee demonstrate that in practice?`;
     }
-    const unused = MANAGER_FALLBACK_QUESTIONS.find(q => !assistantTranscript.includes(normalizeText(q.slice(0, 50))));
+    const unused = MANAGER_FALLBACK_QUESTIONS.find((q) => !assistantTranscript.includes(normalizeText(q.slice(0, 50))));
     return `Thanks — that gives me a clearer picture. ${unused || "Is there anything else about this employee's potential that we haven't covered yet?"}`;
   }
 
   if (nextUnusedSkill) {
     return `Thanks — that helps. Let's switch gears to ${nextUnusedSkill}. Can you tell me about a specific time you used that in your work?`;
   }
-  const unused = EMPLOYEE_FALLBACK_QUESTIONS.find(q => !assistantTranscript.includes(normalizeText(q.slice(0, 50))));
+  const unused = EMPLOYEE_FALLBACK_QUESTIONS.find((q) => !assistantTranscript.includes(normalizeText(q.slice(0, 50))));
   return `Thanks — that's a great example. ${unused || "We're getting a really solid picture. Is there anything else you'd like to share about your skills or experience?"}`;
 };
 
@@ -387,7 +390,12 @@ const getRecentSubstantiveAnswerStreak = (messages: InterviewMessage[]) => {
     const message = messages[i];
     if (message.role === "ai") {
       const lower = normalizeText(message.content);
-      if (lower.includes("let's switch gears") || lower.includes("let's shift") || lower.includes("let's talk about") || lower.includes("that's a great example")) {
+      if (
+        lower.includes("let's switch gears") ||
+        lower.includes("let's shift") ||
+        lower.includes("let's talk about") ||
+        lower.includes("that's a great example")
+      ) {
         break;
       }
       continue;
@@ -413,21 +421,14 @@ const stripQuestionDelta = (value: string) => value.replace(/^\s*\[\[QUESTION_DE
 const sanitizeAssistantMessage = (value: string) => {
   let cleaned = stripQuestionDelta(value);
 
-  const simulatedUserStarts = [
-    /^hi skillsight/i,
-    /^thanks for having me/i,
-    /^as a\s+/i,
-    /^i primarily focus on/i,
-  ];
+  const simulatedUserStarts = [/^hi skillsight/i, /^thanks for having me/i, /^as a\s+/i, /^i primarily focus on/i];
 
   const paragraphs = cleaned
     .split(/\n{2,}/)
     .map((part) => part.trim())
     .filter(Boolean);
 
-  const filteredParagraphs = paragraphs.filter(
-    (part) => !simulatedUserStarts.some((pattern) => pattern.test(part))
-  );
+  const filteredParagraphs = paragraphs.filter((part) => !simulatedUserStarts.some((pattern) => pattern.test(part)));
 
   if (filteredParagraphs.length > 0) {
     cleaned = filteredParagraphs.join("\n\n");
@@ -446,7 +447,16 @@ serve(async (req) => {
   }
 
   try {
-    const { messages = [], interviewType, employeeName, employeeTitle, roleName, targetSkills, managerName, presetPack, forceComplete, questionNumber, maxQuestions } = await req.json();
+    const {
+      messages = [],
+      interviewType,
+      employeeName,
+      employeeTitle,
+      roleName,
+      targetSkills,
+      managerName,
+      presetPack,
+    } = await req.json();
 
     const apiKey = Deno.env.get("LOVABLE_API_KEY");
     if (!apiKey) {
@@ -455,7 +465,10 @@ serve(async (req) => {
 
     const typedMessages: InterviewMessage[] = Array.isArray(messages)
       ? messages
-          .filter((message) => message && typeof message.content === "string" && (message.role === "ai" || message.role === "user"))
+          .filter(
+            (message) =>
+              message && typeof message.content === "string" && (message.role === "ai" || message.role === "user"),
+          )
           .map((message) => ({ role: message.role, content: message.content.trim() }))
       : [];
 
@@ -464,54 +477,6 @@ serve(async (req) => {
     const lastUserClassification = lastUserMessage ? classifyUserMessage(lastUserMessage) : null;
     const recentSubstantiveAnswerStreak = getRecentSubstantiveAnswerStreak(typedMessages);
     const shouldForceAdvance = recentSubstantiveAnswerStreak >= 3 && lastUserClassification === "substantive";
-
-    // Force completion: extract assessment from conversation without asking more questions
-    const isAtLimit = questionNumber && maxQuestions && questionNumber >= maxQuestions;
-    if (forceComplete || isAtLimit) {
-      const extractionPrompt = interviewType === "manager"
-        ? `You have completed a manager interview about ${employeeName} (${employeeTitle}). Based on the entire conversation, produce ONLY a JSON block with the manager_assessment. Do NOT ask any more questions. Output format:
-\`\`\`json
-{"isComplete": true, "manager_assessment": {"observed_skills": {}, "potential_indicators": [], "concerns": [], "learning_agility_observed": null, "leadership_potential_observed": null, "manager_confidence_score": null, "hidden_role_suggestion": null}}
-\`\`\``
-        : `You have completed an employee interview. Based on the entire conversation, produce ONLY a JSON block with extracted data. Do NOT ask any more questions.`;
-
-      const extractionResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          messages: [
-            { role: "system", content: extractionPrompt },
-            ...typedMessages.map(m => ({ role: m.role === "ai" ? "assistant" : "user", content: m.content })),
-          ],
-          temperature: 0.3,
-          max_tokens: 2000,
-        }),
-      });
-
-      const extractionData = await extractionResponse.json();
-      const extractionContent = extractionData?.choices?.[0]?.message?.content || "";
-      
-      let extractedData = null;
-      const jsonMatch = extractionContent.match(/```json\s*([\s\S]*?)```/) || extractionContent.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        try {
-          const raw = jsonMatch[1] || jsonMatch[0];
-          const parsed = JSON.parse(raw);
-          extractedData = parsed.manager_assessment ? { manager_assessment: parsed.manager_assessment } : parsed;
-        } catch { /* ignore parse errors */ }
-      }
-
-      return new Response(
-        JSON.stringify({
-          message: "Thank you — I now have a comprehensive picture. The assessment is being compiled.",
-          isComplete: true,
-          extractedData: extractedData || { manager_assessment: { observed_skills: {}, potential_indicators: [], concerns: [] } },
-          questionDelta: 0,
-        }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
 
     if (lastUserMessage) {
       if (lastUserClassification === "command") {
@@ -522,7 +487,7 @@ serve(async (req) => {
             extractedData: null,
             questionDelta: 0,
           }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
 
@@ -534,7 +499,7 @@ serve(async (req) => {
             extractedData: null,
             questionDelta: 0,
           }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
 
@@ -546,7 +511,7 @@ serve(async (req) => {
             extractedData: null,
             questionDelta: 0,
           }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
 
@@ -558,7 +523,7 @@ serve(async (req) => {
             extractedData: null,
             questionDelta: 1,
           }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
     }
@@ -568,21 +533,14 @@ serve(async (req) => {
       systemPrompt = MANAGER_SYSTEM_PROMPT + `\n\nYou are speaking about: ${employeeName} (${employeeTitle}).`;
       if (managerName) systemPrompt += `\nManager: ${managerName}`;
     } else {
-      systemPrompt = EMPLOYEE_SYSTEM_PROMPT + `\n\nEmployee: ${employeeName} (${employeeTitle}).\nTarget role: ${roleName}.\nTarget skill areas to probe: ${targetSkills?.join(", ") || "general skills"}`;
+      systemPrompt =
+        EMPLOYEE_SYSTEM_PROMPT +
+        `\n\nEmployee: ${employeeName} (${employeeTitle}).\nTarget role: ${roleName}.\nTarget skill areas to probe: ${targetSkills?.join(", ") || "general skills"}`;
     }
 
     if (presetPack && PRESET_BLOCKS[presetPack]) {
       systemPrompt += `\n\n${PRESET_BLOCKS[presetPack]}`;
       systemPrompt += `\n\nIMPORTANT: These are starting INSPIRATIONS only. Do not follow them rigidly. If the employee's answers take the conversation somewhere more interesting and relevant, follow that thread. Always prioritise rich evidence over topic coverage.`;
-    }
-
-    // Add question limit awareness
-    const qNum = questionNumber || typedMessages.filter(m => m.role === "ai").length + 1;
-    const qMax = maxQuestions || 10;
-    if (qNum >= qMax - 2) {
-      systemPrompt += `\n\nIMPORTANT: You are on question ${qNum} of ${qMax}. You MUST begin wrapping up. On your next response, thank the manager and output your complete JSON assessment block. Do NOT ask another question.`;
-    } else if (qNum >= qMax - 4) {
-      systemPrompt += `\n\nNote: You are on question ${qNum} of ${qMax}. Start focusing on the most important remaining areas.`;
     }
 
     const runtimePrompt = [
@@ -599,20 +557,26 @@ serve(async (req) => {
       "Never output employee-side dialogue.",
     ].join("\n");
 
-// Strip hardcoded wrapper phrases from assistant messages in history
-// so the AI doesn't see and mimic them
-const cleanAssistantHistoryMessage = (content: string) => {
-  let cleaned = content;
-  // Remove wrapper prefixes that were added by buildStayOnQuestionReply / buildRephraseReply
-  cleaned = cleaned.replace(/^I want to make sure I understand your experience before we move on\.\s*Could you answer this part first:\s*/i, "");
-  cleaned = cleaned.replace(/^I didn't quite catch that\.\s*Could you rephrase it and answer this part:\s*/i, "");
-  // Remove forced advance prefixes
-  cleaned = cleaned.replace(/^Thanks — that helps\.\s*Let's switch gears to\s*/i, "Let's talk about ");
-  cleaned = cleaned.replace(/^Thanks — that gives me a solid picture of that example\.\s*Let's switch gears:\s*/i, "");
-  cleaned = cleaned.replace(/^Thanks — that gives me useful context\.\s*Let's shift to\s*/i, "Let's talk about ");
-  cleaned = cleaned.replace(/^Thanks — that gives me a clearer picture\.\s*Let's shift gears:\s*/i, "");
-  return cleaned.trim();
-};
+    // Strip hardcoded wrapper phrases from assistant messages in history
+    // so the AI doesn't see and mimic them
+    const cleanAssistantHistoryMessage = (content: string) => {
+      let cleaned = content;
+      // Remove wrapper prefixes that were added by buildStayOnQuestionReply / buildRephraseReply
+      cleaned = cleaned.replace(
+        /^I want to make sure I understand your experience before we move on\.\s*Could you answer this part first:\s*/i,
+        "",
+      );
+      cleaned = cleaned.replace(/^I didn't quite catch that\.\s*Could you rephrase it and answer this part:\s*/i, "");
+      // Remove forced advance prefixes
+      cleaned = cleaned.replace(/^Thanks — that helps\.\s*Let's switch gears to\s*/i, "Let's talk about ");
+      cleaned = cleaned.replace(
+        /^Thanks — that gives me a solid picture of that example\.\s*Let's switch gears:\s*/i,
+        "",
+      );
+      cleaned = cleaned.replace(/^Thanks — that gives me useful context\.\s*Let's shift to\s*/i, "Let's talk about ");
+      cleaned = cleaned.replace(/^Thanks — that gives me a clearer picture\.\s*Let's shift gears:\s*/i, "");
+      return cleaned.trim();
+    };
 
     const chatMessages = [
       { role: "system", content: systemPrompt },
@@ -644,21 +608,24 @@ const cleanAssistantHistoryMessage = (content: string) => {
 
     const lastMessage = cleanedMessages[cleanedMessages.length - 1];
     if (lastMessage?.role === "assistant") {
-      cleanedMessages.push({ role: "user", content: "[waiting for employee response — do not generate another message]" });
+      cleanedMessages.push({
+        role: "user",
+        content: "[waiting for employee response — do not generate another message]",
+      });
     }
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
+        "x-api-key":
+          "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",
+        "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "claude-sonnet-4-20250514",
         messages: cleanedMessages,
         temperature: 0.5,
-        frequency_penalty: 0.7,
-        presence_penalty: 0.5,
         max_tokens: 900,
       }),
     });
@@ -666,10 +633,16 @@ const cleanAssistantHistoryMessage = (content: string) => {
     if (!response.ok) {
       const status = response.status;
       if (status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limited, please try again shortly." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        return new Response(JSON.stringify({ error: "Rate limited, please try again shortly." }), {
+          status: 429,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
       if (status === 402) {
-        return new Response(JSON.stringify({ error: "Credits exhausted." }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        return new Response(JSON.stringify({ error: "Credits exhausted." }), {
+          status: 402,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
       const errorText = await response.text();
       console.error("AI gateway error:", status, errorText);
@@ -680,7 +653,8 @@ const cleanAssistantHistoryMessage = (content: string) => {
     const rawAssistantMessage = data.choices?.[0]?.message?.content || "";
     const parsedQuestionDelta = parseQuestionDelta(rawAssistantMessage);
     const questionDelta = parsedQuestionDelta ?? (typedMessages.length === 0 ? 1 : 0);
-    const effectiveQuestionDelta = shouldForceAdvance && !parsedQuestionDelta ? 1 : shouldForceAdvance ? Math.max(questionDelta, 1) : questionDelta;
+    const effectiveQuestionDelta =
+      shouldForceAdvance && !parsedQuestionDelta ? 1 : shouldForceAdvance ? Math.max(questionDelta, 1) : questionDelta;
     const assistantMessage = sanitizeAssistantMessage(rawAssistantMessage);
     const latestAssistantQuestion = unwrapQuestionPrompt(extractLatestQuestion(assistantMessage));
     // Fuzzy repeat detection: check against ALL previous assistant questions, not just the last one
@@ -688,11 +662,11 @@ const cleanAssistantHistoryMessage = (content: string) => {
       .filter((m) => m.role === "ai")
       .map((m) => normalizeText(unwrapQuestionPrompt(extractLatestQuestion(m.content))));
     const isRepeatedQuestion = allPreviousAssistantQuestions.some(
-      (prevQ) => prevQ.length > 20 && (
-        normalizeText(latestAssistantQuestion) === prevQ ||
-        normalizeText(latestAssistantQuestion).includes(prevQ.slice(0, 60)) ||
-        prevQ.includes(normalizeText(latestAssistantQuestion).slice(0, 60))
-      )
+      (prevQ) =>
+        prevQ.length > 20 &&
+        (normalizeText(latestAssistantQuestion) === prevQ ||
+          normalizeText(latestAssistantQuestion).includes(prevQ.slice(0, 60)) ||
+          prevQ.includes(normalizeText(latestAssistantQuestion).slice(0, 60))),
     );
 
     let isComplete = false;
@@ -724,13 +698,13 @@ const cleanAssistantHistoryMessage = (content: string) => {
 
     return new Response(
       JSON.stringify({ message: messageText, isComplete, extractedData, questionDelta: finalQuestionDelta }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (error) {
     console.error("Interview chat error:", error);
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });

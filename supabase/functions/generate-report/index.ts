@@ -121,38 +121,59 @@ serve(async (req) => {
   }
 
   try {
-    const { employeeName, roleTitle, algorithmResults, gapAnalysis, tfidfRarity, upskillingPaths, managerInsights, momentumData, roleType, threeLayerScore, ahpWeightsUsed, capabilityData } = await req.json();
+    const {
+      employeeName,
+      roleTitle,
+      algorithmResults,
+      gapAnalysis,
+      tfidfRarity,
+      upskillingPaths,
+      managerInsights,
+      momentumData,
+      roleType,
+      threeLayerScore,
+      ahpWeightsUsed,
+      capabilityData,
+    } = await req.json();
 
     const userContent = `Generate the SkillSight assessment report.
 
 Employee: ${employeeName}
 Target Role: ${roleTitle}
-Date: ${new Date().toISOString().split('T')[0]}
+Date: ${new Date().toISOString().split("T")[0]}
 
 ALGORITHM RESULTS:
-- Cosine Similarity: ${algorithmResults.cosineSimilarity?.toFixed(3) || 'N/A'}
-- Jaccard Binary: ${algorithmResults.jaccardBinary?.toFixed(3) || 'N/A'}
-- Jaccard Weighted: ${algorithmResults.jaccardWeighted?.toFixed(3) || 'N/A'}
-- Overall Readiness: ${(algorithmResults.overallReadiness * 100)?.toFixed(1) || 'N/A'}%
-- Final Readiness: ${((algorithmResults.finalReadiness || algorithmResults.overallReadiness) * 100)?.toFixed(1) || 'N/A'}%
+- Cosine Similarity: ${algorithmResults.cosineSimilarity?.toFixed(3) || "N/A"}
+- Jaccard Binary: ${algorithmResults.jaccardBinary?.toFixed(3) || "N/A"}
+- Jaccard Weighted: ${algorithmResults.jaccardWeighted?.toFixed(3) || "N/A"}
+- Overall Readiness: ${(algorithmResults.overallReadiness * 100)?.toFixed(1) || "N/A"}%
+- Final Readiness: ${((algorithmResults.finalReadiness || algorithmResults.overallReadiness) * 100)?.toFixed(1) || "N/A"}%
 - Manager Adjustment: ${algorithmResults.managerAdjustment || 0}
 
-${momentumData ? `MOMENTUM ASSESSMENT:
-- Momentum Score: ${momentumData.momentumScore?.toFixed(3) || 'N/A'}
-- Learning Velocity: ${momentumData.learningVelocity?.toFixed(3) || 'N/A'}
-- Scope Trajectory: ${momentumData.scopeTrajectory?.toFixed(3) || 'N/A'}
-- Motivation Alignment: ${momentumData.motivationAlignment?.toFixed(3) || 'N/A'}
-- Narrative: ${momentumData.narrative || 'N/A'}
-- Trajectory Risk: ${momentumData.trajectoryRisk || 'none'}` : ''}
+${
+  momentumData
+    ? `MOMENTUM ASSESSMENT:
+- Momentum Score: ${momentumData.momentumScore?.toFixed(3) || "N/A"}
+- Learning Velocity: ${momentumData.learningVelocity?.toFixed(3) || "N/A"}
+- Scope Trajectory: ${momentumData.scopeTrajectory?.toFixed(3) || "N/A"}
+- Motivation Alignment: ${momentumData.motivationAlignment?.toFixed(3) || "N/A"}
+- Narrative: ${momentumData.narrative || "N/A"}
+- Trajectory Risk: ${momentumData.trajectoryRisk || "none"}`
+    : ""
+}
 
-${threeLayerScore ? `THREE-LAYER SCORE:
-- Technical Match: ${threeLayerScore.breakdown?.technical?.toFixed(3) || 'N/A'}
-- Capability Match: ${threeLayerScore.breakdown?.capability?.toFixed(3) || 'N/A'}
-- Momentum: ${threeLayerScore.breakdown?.momentum?.toFixed(3) || 'N/A'}
-- Final Three-Layer Score: ${threeLayerScore.threeLayerScore?.toFixed(3) || 'N/A'}
-- Interpretation: ${threeLayerScore.interpretation || 'N/A'}` : ''}
+${
+  threeLayerScore
+    ? `THREE-LAYER SCORE:
+- Technical Match: ${threeLayerScore.breakdown?.technical?.toFixed(3) || "N/A"}
+- Capability Match: ${threeLayerScore.breakdown?.capability?.toFixed(3) || "N/A"}
+- Momentum: ${threeLayerScore.breakdown?.momentum?.toFixed(3) || "N/A"}
+- Final Three-Layer Score: ${threeLayerScore.threeLayerScore?.toFixed(3) || "N/A"}
+- Interpretation: ${threeLayerScore.interpretation || "N/A"}`
+    : ""
+}
 
-ROLE TYPE: ${roleType || 'technical_specialist'}
+ROLE TYPE: ${roleType || "technical_specialist"}
 
 GAP ANALYSIS:
 ${JSON.stringify(gapAnalysis, null, 2)}
@@ -163,31 +184,33 @@ ${JSON.stringify(tfidfRarity, null, 2)}
 UPSKILLING PATHS:
 ${JSON.stringify(upskillingPaths, null, 2)}
 
-${capabilityData ? `CAPABILITY INFERENCE DATA:
+${
+  capabilityData
+    ? `CAPABILITY INFERENCE DATA:
 Transition Profile: ${JSON.stringify(capabilityData.transition_profile || {}, null, 2)}
 Capability Profile: ${JSON.stringify(capabilityData.capability_profile || {}, null, 2)}
 Gap Classification: ${JSON.stringify(capabilityData.gap_classification || {}, null, 2)}
 Behavioral Strengths: ${JSON.stringify(capabilityData.behavioral_strengths || [], null, 2)}
-Capability Summary: ${capabilityData.capability_summary || 'N/A'}
+Capability Summary: ${capabilityData.capability_summary || "N/A"}
 Hidden Strengths: ${JSON.stringify(capabilityData.hidden_strengths || [], null, 2)}
-Transferability Assessment: ${capabilityData.transferability_assessment || 'N/A'}` : 'No capability inference data available.'}
+Transferability Assessment: ${capabilityData.transferability_assessment || "N/A"}`
+    : "No capability inference data available."
+}
 
-${managerInsights ? `MANAGER INSIGHTS:\n${JSON.stringify(managerInsights, null, 2)}` : 'No manager interview conducted yet.'}`;
+${managerInsights ? `MANAGER INSIGHTS:\n${JSON.stringify(managerInsights, null, 2)}` : "No manager interview conducted yet."}`;
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+        "x-api-key":
+          "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",
+        "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: SYSTEM },
-          { role: "user", content: userContent },
-        ],
+        model: "claude-sonnet-4-20250514",
+        system: SYSTEM,
+        messages: [{ role: "user", content: userContent }],
         temperature: 0.4,
         max_tokens: 3000,
       }),
@@ -200,7 +223,7 @@ ${managerInsights ? `MANAGER INSIGHTS:\n${JSON.stringify(managerInsights, null, 
     }
 
     const rawText = await response.text();
-    
+
     let data;
     try {
       data = JSON.parse(rawText);
@@ -210,7 +233,7 @@ ${managerInsights ? `MANAGER INSIGHTS:\n${JSON.stringify(managerInsights, null, 
         .replace(/```\s*/g, "")
         .trim();
       const jsonStart = cleaned.search(/[\{\[]/);
-      const jsonEnd = cleaned.lastIndexOf(jsonStart !== -1 && cleaned[jsonStart] === '[' ? ']' : '}');
+      const jsonEnd = cleaned.lastIndexOf(jsonStart !== -1 && cleaned[jsonStart] === "[" ? "]" : "}");
       if (jsonStart !== -1 && jsonEnd !== -1) {
         cleaned = cleaned.substring(jsonStart, jsonEnd + 1);
       }
@@ -222,7 +245,7 @@ ${managerInsights ? `MANAGER INSIGHTS:\n${JSON.stringify(managerInsights, null, 
         });
       }
     }
-    
+
     const report = data.choices?.[0]?.message?.content || data.report || rawText || "Report generation failed.";
 
     return new Response(JSON.stringify({ report }), {

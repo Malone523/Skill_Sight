@@ -18,29 +18,26 @@ serve(async (req) => {
       .map((m: any) => `${m.role === "user" ? employeeName : "SkillSight AI"}: ${m.content}`)
       .join("\n\n");
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "x-api-key":
+          "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",
+        "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "claude-sonnet-4-20250514",
         temperature: 0.1,
         max_tokens: 2000,
+        system: `You are a skills extraction system. Read interview transcripts and extract demonstrated skills.
+    Proficiency: 1=used with guidance, 2=completed independently, 3=led/designed/taught.
+    Only extract if employee used action words like: built, implemented, designed, led, wrote, created, delivered, solved, developed, optimised, analysed, managed.
+    Do NOT extract skills they mentioned wanting to learn or that their team uses without personal involvement.
+    Match to these skill names where possible: ThermalEngineering, CAD, FEA, MechanicalDesign, SimulationModeling, ManufacturingProcesses, Python, CppLanguage, ROS, CloudAWS, MLOps, MachineLearning, DeepLearning, DataEngineering, Statistics, ComputerVision, NLP, EVBatterySystems, BatteryThermalMgmt, CellChemistry, HighVoltageSystems, GenSixArchitecture, BatteryManagementSystems, AUTOSAR, FunctionalSafety, ADAS, EmbeddedSystems, ProjectManagement, TeamLeadership, StakeholderManagement, CrossFunctional, TechnicalMentoring, DigitalTwin, AQIXQualityAI, SixSigma, PowerElectronics, V2XCommunication, CANBus.
+    Return ONLY valid JSON with this exact structure:
+    {"extracted_skills":{"SkillName":{"proficiency":2,"evidence":"short quote","confidence":"high"}},"new_skills_discovered":["SkillName"],"interview_summary":"2-3 sentences about what stood out"}`,
         messages: [
-          {
-            role: "system",
-            content: `You are a skills extraction system. Read interview transcripts and extract demonstrated skills.
-Proficiency: 1=used with guidance, 2=completed independently, 3=led/designed/taught.
-Only extract if employee used action words like: built, implemented, designed, led, wrote, created, delivered, solved, developed, optimised, analysed, managed.
-Do NOT extract skills they mentioned wanting to learn or that their team uses without personal involvement.
-Match to these skill names where possible: ThermalEngineering, CAD, FEA, MechanicalDesign, SimulationModeling, ManufacturingProcesses, Python, CppLanguage, ROS, CloudAWS, MLOps, MachineLearning, DeepLearning, DataEngineering, Statistics, ComputerVision, NLP, EVBatterySystems, BatteryThermalMgmt, CellChemistry, HighVoltageSystems, GenSixArchitecture, BatteryManagementSystems, AUTOSAR, FunctionalSafety, ADAS, EmbeddedSystems, ProjectManagement, TeamLeadership, StakeholderManagement, CrossFunctional, TechnicalMentoring, DigitalTwin, AQIXQualityAI, SixSigma, PowerElectronics, V2XCommunication, CANBus.
-Return ONLY valid JSON with this exact structure:
-{"extracted_skills":{"SkillName":{"proficiency":2,"evidence":"short quote","confidence":"high"}},"new_skills_discovered":["SkillName"],"interview_summary":"2-3 sentences about what stood out"}`,
-          },
           {
             role: "user",
             content: `Employee: ${employeeName}, ${employeeRole}\nTarget Role: ${targetRole}\nExisting HR Skills: ${JSON.stringify(existingSkills || {})}\n\nTranscript:\n${transcript}`,

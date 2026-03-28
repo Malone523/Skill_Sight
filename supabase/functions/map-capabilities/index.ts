@@ -134,29 +134,28 @@ serve(async (req) => {
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "x-api-key": "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,
+        "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "claude-sonnet-4-20250514",
         temperature: 0.2,
         max_tokens: 3000,
+        system: CAPABILITY_SYSTEM_PROMPT,
         messages: [
-          { role: "system", content: CAPABILITY_SYSTEM_PROMPT },
           {
             role: "user",
             content: `Employee: ${employeeName}, ${employeeRole}
-Target Role: ${targetRole}
-Required Skills for Target Role: ${JSON.stringify(requiredSkills || {})}
-Existing HR Skills: ${JSON.stringify(existingSkills || {})}
-
-Interview Transcript:
-${transcript}
-
-Analyze the behavioral evidence in this transcript. Infer capabilities from what they DID, not what they said they know. Classify every skill gap as progression or foundational. Assess their real starting point for each gap.`,
+    Target Role: ${targetRole}
+    Required Skills for Target Role: ${JSON.stringify(requiredSkills || {})}
+    Existing HR Skills: ${JSON.stringify(existingSkills || {})}
+    Interview Transcript:
+    ${transcript}
+    Analyze the behavioral evidence in this transcript. Infer capabilities from what they DID, not what they said they know. Classify every skill gap as progression or foundational. Assess their real starting point for each gap.`,
           },
         ],
       }),

@@ -1,12 +1,13 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
+  if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
@@ -14,92 +15,83 @@ serve(async (req) => {
     const { cvText, targetRole, targetRoleType, roleRequirements } = await req.json();
 
     if (!cvText || !targetRole) {
-      return new Response(JSON.stringify({ error: 'cvText and targetRole are required' }), {
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      return new Response(JSON.stringify({ error: "cvText and targetRole are required" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) throw new Error('LOVABLE_API_KEY not set');
-
     // ── Call 1: CV skill extraction ──
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+        "x-api-key": ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          {
-            role: 'system',
-            content: `You are a CV parsing engine for BMW Group's SkillSight platform.
-You receive raw CV/resume text and a target role name.
-Extract structured data from the CV.
-
-SKILL NAME NORMALISATION — always map these to the catalog name:
-ROS2, ROS 2 → ROS
-ISO 26262, ISO26262, Functional Safety, ASIL → FunctionalSafety
-PyTorch, TensorFlow, Keras, Scikit-learn → DeepLearning or MachineLearning
-CUDA, GPU Programming → DeepLearning
-LiDAR, Radar, Sensor Fusion, Kalman Filter → SensorFusion
-SLAM, Localisation → EmbeddedSystems
-Object Detection, Perception → ComputerVision
-Trajectory Prediction, Path Planning, Motion Planning → ADAS
-Automotive-grade software, AUTOSAR Classic, AUTOSAR Adaptive → AUTOSAR
-Embedded AI, Real-time systems → EmbeddedSystems
-C++, Cpp, C Plus Plus → CppLanguage
-Docker, Kubernetes, CI/CD → MLOps
-Leadership, Team Lead, Cross-functional coordination → TeamLeadership
-Publications, Speaker, Research → TechnicalMentoring
-
-Return ONLY valid JSON with this exact structure:
-{
-  "extracted_skills": {
-    "SkillName": {
-      "proficiency": 0-3,
-      "evidence": "brief quote or description from CV",
-      "source": "cv"
-    }
-  },
-  "experience_profile": {
-    "total_years": number,
-    "current_title": "string",
-    "current_company": "string",
-    "domain_experience": ["domain1", "domain2"],
-    "education": "highest degree",
-    "red_flags": ["any concerns"],
-    "strengths": ["notable strengths from CV"]
-  },
-  "candidate_summary": "2-3 sentence summary of the candidate"
-}
-
-Proficiency scale:
-0 = mentioned but no evidence of real use
-1 = basic / beginner level evidence  
-2 = intermediate / solid working experience
-3 = expert / deep experience with multiple examples
-
-Be generous with skill extraction - infer skills from described work even if not explicitly listed.
-Map skills to common SkillSight taxonomy: Python, MachineLearning, DeepLearning, DataEngineering, CloudComputing, DevOps, ProjectManagement, SystemsEngineering, ThermalEngineering, EVBatterySystems, AUTOSAR, ManufacturingProcesses, QualityManagement, AgileMethodology, TechnicalCommunication, LeadershipSkills, CppLanguage, ComputerVision, SensorFusion, ADAS, EmbeddedSystems, FunctionalSafety, MLOps, TeamLeadership, TechnicalMentoring, ROS, etc.
-
-Target role: ${targetRole}
-Role type: ${targetRoleType || 'technical_specialist'}`
-          },
-          {
-            role: 'user',
-            content: `Parse this CV and extract skills relevant to the "${targetRole}" role:\n\n${cvText.slice(0, 8000)}`
-          }
-        ],
+        model: "claude-sonnet-4-20250514",
         temperature: 0.3,
         max_tokens: 3000,
+        system: `You are a CV parsing engine for BMW Group's SkillSight platform.
+    You receive raw CV/resume text and a target role name.
+    Extract structured data from the CV.
+    SKILL NAME NORMALISATION — always map these to the catalog name:
+    ROS2, ROS 2 → ROS
+    ISO 26262, ISO26262, Functional Safety, ASIL → FunctionalSafety
+    PyTorch, TensorFlow, Keras, Scikit-learn → DeepLearning or MachineLearning
+    CUDA, GPU Programming → DeepLearning
+    LiDAR, Radar, Sensor Fusion, Kalman Filter → SensorFusion
+    SLAM, Localisation → EmbeddedSystems
+    Object Detection, Perception → ComputerVision
+    Trajectory Prediction, Path Planning, Motion Planning → ADAS
+    Automotive-grade software, AUTOSAR Classic, AUTOSAR Adaptive → AUTOSAR
+    Embedded AI, Real-time systems → EmbeddedSystems
+    C++, Cpp, C Plus Plus → CppLanguage
+    Docker, Kubernetes, CI/CD → MLOps
+    Leadership, Team Lead, Cross-functional coordination → TeamLeadership
+    Publications, Speaker, Research → TechnicalMentoring
+    Return ONLY valid JSON with this exact structure:
+    {
+      "extracted_skills": {
+        "SkillName": {
+          "proficiency": 0-3,
+          "evidence": "brief quote or description from CV",
+          "source": "cv"
+        }
+      },
+      "experience_profile": {
+        "total_years": number,
+        "current_title": "string",
+        "current_company": "string",
+        "domain_experience": ["domain1", "domain2"],
+        "education": "highest degree",
+        "red_flags": ["any concerns"],
+        "strengths": ["notable strengths from CV"]
+      },
+      "candidate_summary": "2-3 sentence summary of the candidate"
+    }
+    Proficiency scale:
+    0 = mentioned but no evidence of real use
+    1 = basic / beginner level evidence  
+    2 = intermediate / solid working experience
+    3 = expert / deep experience with multiple examples
+    Be generous with skill extraction - infer skills from described work even if not explicitly listed.
+    Map skills to common SkillSight taxonomy: Python, MachineLearning, DeepLearning, DataEngineering, CloudComputing, DevOps, ProjectManagement, SystemsEngineering, ThermalEngineering, EVBatterySystems, AUTOSAR, ManufacturingProcesses, QualityManagement, AgileMethodology, TechnicalCommunication, LeadershipSkills, CppLanguage, ComputerVision, SensorFusion, ADAS, EmbeddedSystems, FunctionalSafety, MLOps, TeamLeadership, TechnicalMentoring, ROS, etc.
+    Target role: ${targetRole}
+    Role type: ${targetRoleType || "technical_specialist"}`,
+        messages: [
+          {
+            role: "user",
+            content: `Parse this CV and extract skills relevant to the "${targetRole}" role:\n\n${cvText.slice(0, 8000)}`,
+          },
+        ],
       }),
     });
 
     const aiData = await response.json();
-    const content = aiData.choices?.[0]?.message?.content || '';
-    
+    const content = aiData.choices?.[0]?.message?.content || "";
+
     let parsed;
     try {
       const jsonMatch = content.match(/\{[\s\S]*\}/);
@@ -109,25 +101,26 @@ Role type: ${targetRoleType || 'technical_specialist'}`
     }
 
     if (!parsed) {
-      return new Response(JSON.stringify({ error: 'Failed to parse CV', raw: content }), {
-        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      return new Response(JSON.stringify({ error: "Failed to parse CV", raw: content }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     // ── Call 2: AI Judgment (recruiter assessment) ──
     let aiJudgment = null;
     try {
-      const judgmentResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-        method: 'POST',
+      const judgmentResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
         },
         body: JSON.stringify({
-          model: 'google/gemini-2.5-flash',
+          model: "google/gemini-2.5-flash",
           messages: [
             {
-              role: 'system',
+              role: "system",
               content: `You are a senior BMW talent acquisition specialist with 15 years hiring technical engineers. You are rigorous, fair, and impossible to impress with company names or titles alone. You care about evidence of real work.
 
 YOUR CORE PRINCIPLE:
@@ -218,11 +211,11 @@ Return ONLY valid JSON:
   "ai_concerns": ["specific concern — must reference actual CV content or absence"],
   "ai_recommended_preset": "technical_depth | hidden_potential | leadership_signals | ev_transition | digital_ai | cross_functional",
   "ai_recruiter_note": "one brutally honest sentence — would you personally fight to interview this person or are you just not rejecting them?"
-}`
+}`,
             },
             {
-              role: 'user',
-              content: `TARGET ROLE: ${targetRole} (${targetRoleType || 'technical_specialist'})
+              role: "user",
+              content: `TARGET ROLE: ${targetRole} (${targetRoleType || "technical_specialist"})
 
 ROLE REQUIREMENTS:
 ${JSON.stringify(roleRequirements || {})}
@@ -231,8 +224,8 @@ EXTRACTED CANDIDATE PROFILE:
 ${JSON.stringify(parsed)}
 
 FULL CV TEXT:
-${cvText.slice(0, 6000)}`
-            }
+${cvText.slice(0, 6000)}`,
+            },
           ],
           temperature: 0.1,
           max_tokens: 1500,
@@ -240,7 +233,7 @@ ${cvText.slice(0, 6000)}`
       });
 
       const judgmentData = await judgmentResponse.json();
-      const judgmentContent = judgmentData.choices?.[0]?.message?.content || '';
+      const judgmentContent = judgmentData.choices?.[0]?.message?.content || "";
       const judgmentMatch = judgmentContent.match(/\{[\s\S]*\}/);
       if (judgmentMatch) {
         aiJudgment = JSON.parse(judgmentMatch[0]);
@@ -250,12 +243,12 @@ ${cvText.slice(0, 6000)}`
     }
 
     return new Response(JSON.stringify({ parsed, aiJudgment }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), {
-      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
