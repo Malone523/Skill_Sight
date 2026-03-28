@@ -19,7 +19,7 @@ import { useQuery } from "@tanstack/react-query";
 import { SkillBadge } from "@/components/SkillBadge";
 import type { SkillVector } from "@/lib/algorithms";
 
-interface SkillReq { name: string; required: number; weight: number }
+interface SkillReq { name: string; required: number; weight: number | string }
 
 const hiringStatusConfig: Record<string, { dot: string; label: string; labelColor: string }> = {
   actively_hiring: { dot: '#dc3545', label: 'Actively Hiring', labelColor: '#dc3545' },
