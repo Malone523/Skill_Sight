@@ -465,6 +465,54 @@ serve(async (req) => {
     const recentSubstantiveAnswerStreak = getRecentSubstantiveAnswerStreak(typedMessages);
     const shouldForceAdvance = recentSubstantiveAnswerStreak >= 3 && lastUserClassification === "substantive";
 
+    // Force completion: extract assessment from conversation without asking more questions
+    const isAtLimit = questionNumber && maxQuestions && questionNumber >= maxQuestions;
+    if (forceComplete || isAtLimit) {
+      const extractionPrompt = interviewType === "manager"
+        ? `You have completed a manager interview about ${employeeName} (${employeeTitle}). Based on the entire conversation, produce ONLY a JSON block with the manager_assessment. Do NOT ask any more questions. Output format:
+\`\`\`json
+{"isComplete": true, "manager_assessment": {"observed_skills": {}, "potential_indicators": [], "concerns": [], "learning_agility_observed": null, "leadership_potential_observed": null, "manager_confidence_score": null, "hidden_role_suggestion": null}}
+\`\`\``
+        : `You have completed an employee interview. Based on the entire conversation, produce ONLY a JSON block with extracted data. Do NOT ask any more questions.`;
+
+      const extractionResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: [
+            { role: "system", content: extractionPrompt },
+            ...typedMessages.map(m => ({ role: m.role === "ai" ? "assistant" : "user", content: m.content })),
+          ],
+          temperature: 0.3,
+          max_tokens: 2000,
+        }),
+      });
+
+      const extractionData = await extractionResponse.json();
+      const extractionContent = extractionData?.choices?.[0]?.message?.content || "";
+      
+      let extractedData = null;
+      const jsonMatch = extractionContent.match(/```json\s*([\s\S]*?)```/) || extractionContent.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        try {
+          const raw = jsonMatch[1] || jsonMatch[0];
+          const parsed = JSON.parse(raw);
+          extractedData = parsed.manager_assessment ? { manager_assessment: parsed.manager_assessment } : parsed;
+        } catch { /* ignore parse errors */ }
+      }
+
+      return new Response(
+        JSON.stringify({
+          message: "Thank you — I now have a comprehensive picture. The assessment is being compiled.",
+          isComplete: true,
+          extractedData: extractedData || { manager_assessment: { observed_skills: {}, potential_indicators: [], concerns: [] } },
+          questionDelta: 0,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     if (lastUserMessage) {
       if (lastUserClassification === "command") {
         return new Response(
