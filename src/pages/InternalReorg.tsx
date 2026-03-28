@@ -24,10 +24,12 @@ export default function InternalReorg() {
   const { data: allSkills } = useAllEmployeeSkills();
   const { data: roles } = useRoles();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
   const [scanning, setScanning] = useState(false);
   const [results, setResults] = useState<ReorgMatch[] | null>(null);
+  const autoScanTriggered = useRef(false);
 
   const selectedRole = roles?.find(r => r.id === selectedRoleId);
 
