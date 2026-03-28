@@ -85,6 +85,18 @@ export default function ExternalCandidateProfile() {
     return risks;
   }, [report_raw]);
 
+  // Parse hybrid reasoning data — must be before conditional returns
+  const hybridInfo = useMemo(() => {
+    if (!candidate) return null;
+    try {
+      const data = JSON.parse(candidate.worthy_reasoning || '{}');
+      if (data.method) return data;
+      return null;
+    } catch {
+      return null;
+    }
+  }, [candidate?.worthy_reasoning]);
+
   if (isLoading) return <div className="flex items-center justify-center h-64"><LoadingSpinner /></div>;
   if (!candidate) return <div className="p-6">Candidate not found.</div>;
 
