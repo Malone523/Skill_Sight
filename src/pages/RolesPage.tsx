@@ -16,6 +16,7 @@ import { Plus, Pencil, Eye, X, Share2, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { SkillBadge } from "@/components/SkillBadge";
 import type { SkillVector } from "@/lib/algorithms";
 
 interface SkillReq { name: string; required: number; weight: number }
