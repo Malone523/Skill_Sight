@@ -71,6 +71,13 @@ const App = () => (
               <Route path="/my-interview" element={<ProtectedRoute role="employee"><EmployeeLayout><MyInterview /></EmployeeLayout></ProtectedRoute>} />
               <Route path="/my-analysis" element={<ProtectedRoute role="employee"><EmployeeLayout><MyResults /></EmployeeLayout></ProtectedRoute>} />
 
+              {/* Public routes — no auth */}
+              <Route path="/interview-access" element={<InterviewAccess />} />
+              <Route path="/interview-external/:interviewId" element={<InterviewExternal />} />
+
+              {/* Manager route for external analysis */}
+              <Route path="/analysis-external/:id" element={<ProtectedRoute role="manager"><AppLayout><AnalysisExternal /></AppLayout></ProtectedRoute>} />
+
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
