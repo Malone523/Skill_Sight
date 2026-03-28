@@ -47,17 +47,7 @@ export default function InternalReorg() {
   }, [searchParams, roles]);
 
   // Trigger scan once role is selected via URL
-  useEffect(() => {
-    if (autoScanTriggered.current && selectedRole && employees && allSkills && roles && !scanning && !results) {
-      runScanFn();
-    }
-  }, [selectedRole, employees, allSkills, roles]);
-
-  const runScanFn = useCallback(async () => {
-    const role = roles?.find(r => r.id === selectedRoleId);
-    if (!role || !employees || !allSkills || !roles) return;
-    runScanInternal(role);
-  }, [selectedRoleId, employees, allSkills, roles]);
+  const autoScanReady = autoScanTriggered.current && selectedRole && employees && allSkills && roles && !scanning && !results;
 
   const runScan = useCallback(async () => {
     if (!selectedRole || !employees || !allSkills || !roles) return;
