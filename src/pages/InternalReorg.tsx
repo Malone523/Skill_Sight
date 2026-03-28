@@ -170,9 +170,9 @@ export default function InternalReorg() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Lane title="Immediate (≥80%)" color="green" matches={immediate} navigate={navigate} />
-              <Lane title="Near-Ready (60–79%)" color="amber" matches={nearReady} navigate={navigate} />
-              <Lane title="Developing (<60%)" color="muted" matches={developing} navigate={navigate} />
+              <Lane title="Immediate Transfer (≥80%)" subtitle="Ready to move with minimal ramp-up" color="green" matches={immediate} navigate={navigate} />
+              <Lane title="Near-Ready (60–79%)" subtitle="Gap closable in under 3 months with targeted focus" color="amber" matches={nearReady} navigate={navigate} />
+              <Lane title="Developing (<60%)" subtitle="Strong trajectory, longer investment horizon" color="muted" matches={developing} navigate={navigate} />
             </div>
           </>
         )}
