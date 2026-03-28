@@ -74,11 +74,52 @@ export default function EmployeeList() {
 
   const filteredExternal = useMemo(() => {
     if (!externalCandidates) return [];
-    return externalCandidates.filter(c => {
+    let list = externalCandidates;
+    if (extFilter === "pending") {
+      list = list.filter((c: any) => c.submission_source === "candidate_self_submit" && c.manager_decision === "pending" && c.interview_worthy);
+    } else if (extFilter === "self") {
+      list = list.filter((c: any) => c.submission_source === "candidate_self_submit");
+    }
+    return list.filter(c => {
       if (!search) return true;
       return c.name?.toLowerCase().includes(search.toLowerCase());
     });
-  }, [externalCandidates, search]);
+  }, [externalCandidates, search, extFilter]);
+
+  const pendingCount = useMemo(() => {
+    if (!externalCandidates) return 0;
+    return externalCandidates.filter((c: any) => c.submission_source === "candidate_self_submit" && c.manager_decision === "pending" && c.interview_worthy).length;
+  }, [externalCandidates]);
+
+  const handleApprove = async (candidate: any) => {
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+    await supabase.from("external_candidates").update({
+      access_code: code,
+      code_expires_at: expiresAt,
+      status: "invited",
+      manager_decision: "approved",
+      manager_decision_at: new Date().toISOString(),
+    } as any).eq("id", candidate.id);
+    toast.success("Interview code generated");
+    setCodeModalCandidate({ ...candidate, access_code: code, code_expires_at: expiresAt });
+    refetchExternal();
+  };
+
+  const handleDecline = async () => {
+    if (!declineTarget) return;
+    await supabase.from("external_candidates").update({
+      status: "rejected",
+      manager_decision: "rejected",
+      manager_decision_at: new Date().toISOString(),
+      manager_decision_note: declineNote || null,
+    } as any).eq("id", declineTarget.id);
+    toast.success("Application declined");
+    setDeclineOpen(false);
+    setDeclineTarget(null);
+    setDeclineNote("");
+    refetchExternal();
+  };
 
   if (isLoading) return <div className="flex items-center justify-center h-64"><LoadingSpinner /></div>;
 
