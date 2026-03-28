@@ -356,7 +356,7 @@ export default function EmployeeList() {
                       )}
 
                       {/* Actions */}
-                      <div className="flex gap-2 mt-4">
+                      <div className="flex gap-2 mt-4" onClick={e => e.stopPropagation()}>
                         {isPendingReview && (
                           <>
                             <Button size="sm" className="flex-1 text-xs bg-green-600 hover:bg-green-700" onClick={() => handleApprove(c)}>
