@@ -130,6 +130,9 @@ export default function EmployeeList() {
       interviewing: { label: "Interview In Progress", variant: "outline" },
       completed: { label: "Assessment Complete", variant: "default" },
       not_worthy: { label: "Below Threshold", variant: "destructive" },
+      pending_manager_review: { label: "Pending Review", variant: "outline" },
+      below_threshold: { label: "Below Threshold", variant: "destructive" },
+      rejected: { label: "Declined", variant: "secondary" },
     };
     const s = map[status] || { label: status, variant: "secondary" as const };
     return <Badge variant={s.variant} className="text-[10px]">{s.label}</Badge>;
