@@ -163,6 +163,24 @@ export default function MyInterview() {
       const newSkillsDiscovered = interpreted?.new_skills_discovered || [];
       const interviewSummary = interpreted?.interview_summary || "";
 
+      // Phase 1b: Map capabilities (behavioral inference)
+      let capabilityData: any = null;
+      try {
+        const { data: capResult } = await supabase.functions.invoke("map-capabilities", {
+          body: {
+            conversationHistory: historyForInterpret,
+            employeeName: employee.name,
+            employeeRole: employee.job_title || "Employee",
+            targetRole: targetRole?.title || "Target Role",
+            requiredSkills: targetRole ? (targetRole.required_skills || {}) : {},
+            existingSkills: existingSkillsMap,
+          },
+        });
+        capabilityData = capResult?.capabilities;
+      } catch (e) {
+        console.error("Capability mapping failed (non-blocking):", e);
+      }
+
       // Phase 2: Save completed interview
       await supabase
         .from("interviews")
@@ -257,6 +275,19 @@ export default function MyInterview() {
       const empSkills: SkillVector = {};
       freshSkills?.forEach(s => { empSkills[s.skill_name] = s.proficiency || 0; });
 
+      // Enrich skills with capability-inferred starting points
+      const enrichedSkills = { ...empSkills };
+      const gapClassification = capabilityData?.gap_classification || {};
+      Object.entries(gapClassification).forEach(([skillName, gapData]: [string, any]) => {
+        if (
+          gapData.gap_type === 'progression' &&
+          gapData.bridging_capabilities?.length > 0 &&
+          !enrichedSkills[skillName]
+        ) {
+          enrichedSkills[skillName] = 1; // start as beginner, not zero
+        }
+      });
+
       // Fetch all roles for TF-IDF
       const { data: allRoles } = await supabase.from("roles").select("*");
 
@@ -267,11 +298,25 @@ export default function MyInterview() {
         return;
       }
 
+      // Compute capability match from capability profile
+      let capabilityReadiness = 0.5; // default
+      if (capabilityData?.capability_profile) {
+        const caps = Object.values(capabilityData.capability_profile) as any[];
+        const highRelevant = caps.filter((c: any) => c.relevance_to_role === 'HIGH');
+        const strongHighRelevant = highRelevant.filter((c: any) => ['DEMONSTRATED', 'EXCEPTIONAL'].includes(c.rating));
+        if (highRelevant.length > 0) {
+          capabilityReadiness = strongHighRelevant.length / highRelevant.length;
+        } else if (caps.length > 0) {
+          const strong = caps.filter((c: any) => ['DEMONSTRATED', 'EXCEPTIONAL'].includes(c.rating));
+          capabilityReadiness = strong.length / caps.length;
+        }
+      }
+
       const algorithmInput: AlgorithmInput = {
         employee: {
           id: employee.id,
           name: employee.name,
-          skills: empSkills,
+          skills: enrichedSkills,
           performanceScore: employee.performance_score || 0.5,
           learningAgility: employee.learning_agility || 0.5,
           tenureYears: employee.tenure_years || 0,
@@ -293,8 +338,7 @@ export default function MyInterview() {
 
       const results = runFullAnalysis(algorithmInput);
 
-      // Compute three-layer score
-      const capabilityReadiness = 0.5; // Default capability — no separate capability function yet
+      // Compute three-layer score (capabilityReadiness already computed above)
       const threeLayer = computeThreeLayerScore(
         results.overallReadiness,
         capabilityReadiness,
@@ -332,7 +376,7 @@ export default function MyInterview() {
           technical_match: results.overallReadiness,
           capability_match: capabilityReadiness,
           three_layer_score: threeLayer.threeLayerScore,
-          score_breakdown: threeLayer as any,
+          score_breakdown: { ...threeLayer, capabilityData: capabilityData || null } as any,
           computed_at: new Date().toISOString(),
         },
         { onConflict: "employee_id,role_id" }
@@ -368,6 +412,7 @@ export default function MyInterview() {
             roleType,
             threeLayerScore: threeLayer,
             ahpWeightsUsed: { weights: ahpWeights, roleType },
+            capabilityData: capabilityData || null,
           },
         });
 

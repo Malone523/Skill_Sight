@@ -84,6 +84,10 @@ export default function AnalysisPage() {
   const roleType = (latestResult as any)?.role_type || 'technical_specialist';
   const ahpWeightsUsed = (latestResult as any)?.ahp_weights_used as any || null;
   const scoreBreakdown = (latestResult as any)?.score_breakdown as any || null;
+  const capabilityData = scoreBreakdown?.capabilityData || null;
+  const transitionProfile = capabilityData?.transition_profile || null;
+  const capabilityProfile = capabilityData?.capability_profile || null;
+  const gapClassification = capabilityData?.gap_classification || null;
 
   const readiness = threeLayerScore != null
     ? Math.round(threeLayerScore * 100)
@@ -150,20 +154,23 @@ export default function AnalysisPage() {
   }, [cosine, jaccBin, jaccW, gapScore, gapAnalysis]);
 
   const capabilityFactors = useMemo(() => {
-    const exceptional = interviewSurplus.filter(s => s.rating === 'EXCEPTIONAL').map(s => s.skill);
-    const demonstrated = interviewSurplus.filter(s => s.rating === 'DEMONSTRATED').map(s => s.skill);
-    const highRelevance = interviewSurplus.filter(s => s.relevance === 'HIGH' || s.relevance === 'CRITICAL');
-    const strongHighRelevance = highRelevance.filter(s => ['DEMONSTRATED', 'EXCEPTIONAL'].includes(s.rating));
+    // Use capabilityProfile from map-capabilities if available, fallback to interviewSurplus
+    const allCaps = capabilityProfile ? Object.entries(capabilityProfile) : [];
+    const exceptional = allCaps.filter(([, c]: [string, any]) => c.rating === 'EXCEPTIONAL');
+    const demonstrated = allCaps.filter(([, c]: [string, any]) => c.rating === 'DEMONSTRATED');
+    const highRelevance = allCaps.filter(([, c]: [string, any]) => c.relevance_to_role === 'HIGH');
+    const strongHighRelevance = highRelevance.filter(([, c]: [string, any]) => ['DEMONSTRATED', 'EXCEPTIONAL'].includes(c.rating));
+
     const factors = [
-      { label: 'EXCEPTIONAL capabilities', value: exceptional.length > 0 ? exceptional.join(', ') : 'None assessed', note: 'top-tier demonstrated skills' },
-      { label: 'DEMONSTRATED capabilities', value: demonstrated.length > 0 ? demonstrated.join(', ') : 'None assessed', note: 'solidly proven in interview' },
+      { label: 'EXCEPTIONAL capabilities', value: exceptional.length > 0 ? exceptional.map(([name]) => name).join(', ') : 'None at this level', note: 'top-tier demonstrated thinking patterns' },
+      { label: 'DEMONSTRATED capabilities', value: demonstrated.length > 0 ? demonstrated.map(([name]) => name).join(', ') : 'None confirmed', note: 'solidly evidenced in interview behavior' },
       { label: 'High-relevance capabilities assessed', value: `${highRelevance.length}`, note: 'directly relevant to target role' },
-      { label: 'Strong high-relevance', value: `${strongHighRelevance.length} of ${highRelevance.length}`, note: highRelevance.length > 0 ? `${Math.round(strongHighRelevance.length / highRelevance.length * 100)}%` : 'N/A' },
+      { label: 'Strong high-relevance', value: highRelevance.length > 0 ? `${strongHighRelevance.length} of ${highRelevance.length}` : 'Requires capability interview data', note: highRelevance.length > 0 ? 'confirmed through behavioral evidence' : 'Run interview to populate this' },
     ];
-    const standoutItem = interviewSurplus.find(s => s.rating === 'EXCEPTIONAL');
-    const standout = standoutItem ? `"${standoutItem.skill}" rated EXCEPTIONAL${standoutItem.relevance ? ` with ${standoutItem.relevance} role relevance` : ''}` : '';
-    return { factors, standout };
-  }, [interviewSurplus]);
+    const standoutItem = exceptional[0] || demonstrated[0];
+    const standout = standoutItem ? `Standout: "${standoutItem[0]}" — ${(standoutItem[1] as any).inferred_from?.slice(0, 100) || (standoutItem[1] as any).evidence?.slice(0, 100) || ''}` : '';
+    return { factors, standout, allCaps };
+  }, [capabilityProfile, interviewSurplus]);
 
   const momentumFactors = useMemo(() => {
     if (!momentumBreakdown) return { factors: [], standout: '' };
@@ -225,6 +232,7 @@ export default function AnalysisPage() {
           roleType,
           threeLayerScore: scoreBreakdown,
           ahpWeightsUsed,
+          capabilityData: capabilityData || null,
         },
       });
       if (error) throw error;
@@ -343,6 +351,7 @@ export default function AnalysisPage() {
             color="hsl(270 60% 55%)"
             factors={capabilityFactors.factors}
             standout={capabilityFactors.standout}
+            capabilityDetails={capabilityFactors.allCaps}
           />
           <ScoreWithFactors
             title="Momentum Score"
@@ -587,6 +596,31 @@ export default function AnalysisPage() {
           </Card>
         )}
 
+        {/* Transition Profile Banner */}
+        {transitionProfile?.is_transitioning && (
+          <Card className="border-primary/30 bg-primary/5">
+            <CardContent className="p-4 flex items-start gap-3">
+              <ArrowRight className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-foreground">
+                  Active Transition Profile — {transitionProfile.transition_stage === 'mid' ? 'Mid-Transition' : transitionProfile.transition_stage === 'late' ? 'Late-Stage Transition' : 'Early Transition'}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">{transitionProfile.maturity_note}</p>
+                {transitionProfile.transition_evidence && (
+                  <p className="text-xs text-muted-foreground mt-1 italic">"{transitionProfile.transition_evidence?.slice(0, 150)}..."</p>
+                )}
+                {transitionProfile.transition_domains?.length > 0 && (
+                  <div className="flex gap-2 mt-2">
+                    {transitionProfile.transition_domains.map((d: string, i: number) => (
+                      <Badge key={i} variant="secondary" className="text-[10px]">{d}</Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Tabs: AI Report / Raw Scores */}
         <Tabs defaultValue="report">
           <TabsList>
@@ -814,11 +848,12 @@ export default function AnalysisPage() {
 // ─── Score With Factors Component ───────────────────────────────────
 
 function ScoreWithFactors({
-  title, score, color, factors, standout,
+  title, score, color, factors, standout, capabilityDetails,
 }: {
   title: string; score: number; color: string;
   factors: { label: string; value: string; note: string }[];
   standout?: string;
+  capabilityDetails?: [string, any][];
 }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -853,6 +888,17 @@ function ScoreWithFactors({
                 <p className="text-xs text-muted-foreground italic">{standout}</p>
               </div>
             )}
+            {/* Show behavioral inference details for capability cards */}
+            {capabilityDetails && capabilityDetails
+              .filter(([, c]) => ['DEMONSTRATED', 'EXCEPTIONAL'].includes(c.rating))
+              .slice(0, 4)
+              .map(([capName, capData]) => (
+                <div key={capName} className="mt-2 p-2 bg-secondary rounded-md">
+                  <p className="text-xs font-semibold">{capName} — <span className={capData.rating === 'EXCEPTIONAL' ? 'text-green-600 dark:text-green-400' : 'text-primary'}>{capData.rating}</span></p>
+                  {capData.inferred_from && <p className="text-[11px] text-muted-foreground italic mt-0.5">Inferred from: "{capData.inferred_from.slice(0, 120)}"</p>}
+                </div>
+              ))
+            }
           </div>
         )}
       </CardContent>
