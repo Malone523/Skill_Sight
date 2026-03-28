@@ -89,11 +89,18 @@ export default function AnalysisPage() {
   const capabilityProfile = capabilityData?.capability_profile || null;
   const gapClassification = capabilityData?.gap_classification || null;
 
-  const readiness = threeLayerScore != null
-    ? Math.round(threeLayerScore * 100)
-    : latestResult
-      ? Math.round((latestResult.final_readiness || latestResult.overall_readiness || 0) * 100)
-      : localResults ? Math.round(localResults.overallReadiness * 100) : 0;
+  const readiness = useMemo(() => {
+    if (threeLayerScore != null) return Math.round(threeLayerScore * 100);
+    if (latestResult) {
+      // If momentum is null, recompute as 50/50 technical + capability
+      if (momentumScore === null) {
+        const partial = (technicalMatch * 0.5) + (capabilityMatch * 0.5);
+        return Math.round(partial * 100);
+      }
+      return Math.round((latestResult.final_readiness || latestResult.overall_readiness || 0) * 100);
+    }
+    return localResults ? Math.round(localResults.overallReadiness * 100) : 0;
+  }, [threeLayerScore, latestResult, localResults, momentumScore, technicalMatch, capabilityMatch]);
 
   const gapAnalysis = latestResult?.gap_analysis
     ? latestResult.gap_analysis as unknown as { criticalGaps: Array<{ skill: string; currentProficiency: number; requiredProficiency: number; deficit: number; strategicWeight: number; weightedGap: number; priority: string }>; surplusSkills: Array<{ skill: string; current: number; required: number; surplus: number }>; interviewSurplus?: Array<{ skill: string; type: string; rating: string; evidence: string; relevance: string }>; normalizedGapScore: number; readinessPercent: number }
