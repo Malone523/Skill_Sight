@@ -652,7 +652,7 @@ export default function AnalysisPage() {
                 {[...Array(8)].map((_, i) => <Skeleton key={i} className="h-4 w-full" />)}
               </div>
             ) : report ? (
-              <div className="prose prose-sm max-w-none prose-headings:text-foreground prose-p:text-foreground/80 prose-strong:text-foreground prose-li:text-foreground/80" dangerouslySetInnerHTML={{ __html: markdownToHtml(report.replace(/### Risk Factors[\s\S]*?(?=\n### |\n## |$)/, '')) }} />
+              <div className="prose prose-sm max-w-none prose-headings:text-foreground prose-p:text-foreground/80 prose-strong:text-foreground prose-li:text-foreground/80" dangerouslySetInnerHTML={{ __html: markdownToHtml(report.replace(/### Risk Factors[\s\S]*?(?=\n### |\n## |$)/, '').replace(/### 90-Day Action Plan[\s\S]*?(?=\n### |\n## |$)/, '').replace(/### 6-Month Roadmap[\s\S]*?(?=\n### |\n## |$)/, '').replace(/### Recommended Development Timeline[\s\S]*?(?=\n### |\n## |$)/, '')) }} />
             ) : (
               <div className="text-center py-12">
                 <Sparkles className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
