@@ -576,6 +576,15 @@ serve(async (req) => {
       systemPrompt += `\n\nIMPORTANT: These are starting INSPIRATIONS only. Do not follow them rigidly. If the employee's answers take the conversation somewhere more interesting and relevant, follow that thread. Always prioritise rich evidence over topic coverage.`;
     }
 
+    // Add question limit awareness
+    const qNum = questionNumber || typedMessages.filter(m => m.role === "ai").length + 1;
+    const qMax = maxQuestions || 10;
+    if (qNum >= qMax - 2) {
+      systemPrompt += `\n\nIMPORTANT: You are on question ${qNum} of ${qMax}. You MUST begin wrapping up. On your next response, thank the manager and output your complete JSON assessment block. Do NOT ask another question.`;
+    } else if (qNum >= qMax - 4) {
+      systemPrompt += `\n\nNote: You are on question ${qNum} of ${qMax}. Start focusing on the most important remaining areas.`;
+    }
+
     const runtimePrompt = [
       "RUNTIME INSTRUCTIONS:",
       `Latest user message: ${lastUserMessage ? JSON.stringify(lastUserMessage) : '"[conversation start]"'}`,
