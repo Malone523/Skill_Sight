@@ -49,20 +49,8 @@ In the Summary, briefly explain the three-layer score in one sentence.
 Example: "The 61% final score blends technical skill match (47%), capability thinking match (50%), and growth momentum (85%) — the momentum score reflects that the candidate is actively in transition, not waiting to begin."
 
 === PREDICTION REQUIREMENT ===
-You MUST include a prediction statement in the Summary section.
-Format it as a clearly labelled line after the main summary paragraph:
-
-"Trajectory Projection: Based on this momentum profile and identified learning path, 
-candidates with this pattern typically reach [X]% readiness in [Y-Z months] 
-with [specific condition]. [One sentence on what accelerates or limits this.]"
-
-Rules for the projection:
-- Use estimated_weeks_from_real_start from gap_classification for the timeframe when available
-- Adjust for learning velocity score (high velocity = shorter timeframe, low = longer)
-- State a condition (e.g. "with access to a technical mentor in EV battery systems")
-- Add one honest limiting factor
-- Express as a range not a single number
-- Never say "guaranteed" or "will definitely" — use "typically" or "profiles like this tend to"
+Include ONE trajectory projection sentence in the Summary. Example: "Profiles like this typically reach 75-80% readiness in 4-6 months with structured mentoring."
+Keep it brief — one sentence, use ranges, never say "guaranteed."
 
 === BEHAVIORAL STRENGTHS (required) ===
 Use the behavioral_strengths array from capability inference when available.
