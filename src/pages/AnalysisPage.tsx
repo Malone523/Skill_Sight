@@ -594,6 +594,31 @@ export default function AnalysisPage() {
           </Card>
         )}
 
+        {/* Transition Profile Banner */}
+        {transitionProfile?.is_transitioning && (
+          <Card className="border-primary/30 bg-primary/5">
+            <CardContent className="p-4 flex items-start gap-3">
+              <ArrowRight className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-foreground">
+                  Active Transition Profile — {transitionProfile.transition_stage === 'mid' ? 'Mid-Transition' : transitionProfile.transition_stage === 'late' ? 'Late-Stage Transition' : 'Early Transition'}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">{transitionProfile.maturity_note}</p>
+                {transitionProfile.transition_evidence && (
+                  <p className="text-xs text-muted-foreground mt-1 italic">"{transitionProfile.transition_evidence?.slice(0, 150)}..."</p>
+                )}
+                {transitionProfile.transition_domains?.length > 0 && (
+                  <div className="flex gap-2 mt-2">
+                    {transitionProfile.transition_domains.map((d: string, i: number) => (
+                      <Badge key={i} variant="secondary" className="text-[10px]">{d}</Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Tabs: AI Report / Raw Scores */}
         <Tabs defaultValue="report">
           <TabsList>
