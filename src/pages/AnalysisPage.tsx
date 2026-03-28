@@ -79,7 +79,7 @@ export default function AnalysisPage() {
   const threeLayerScore = (latestResult as any)?.three_layer_score ?? null;
   const technicalMatch = (latestResult as any)?.technical_match ?? latestResult?.overall_readiness ?? localResults?.overallReadiness ?? 0;
   const capabilityMatch = (latestResult as any)?.capability_match ?? 0.5;
-  const momentumScore = (latestResult as any)?.momentum_score ?? 0;
+  const momentumScore = (latestResult as any)?.momentum_score ?? null;
   const momentumBreakdown = (latestResult as any)?.momentum_breakdown as any || null;
   const roleType = (latestResult as any)?.role_type || 'technical_specialist';
   const ahpWeightsUsed = (latestResult as any)?.ahp_weights_used as any || null;
@@ -89,11 +89,18 @@ export default function AnalysisPage() {
   const capabilityProfile = capabilityData?.capability_profile || null;
   const gapClassification = capabilityData?.gap_classification || null;
 
-  const readiness = threeLayerScore != null
-    ? Math.round(threeLayerScore * 100)
-    : latestResult
-      ? Math.round((latestResult.final_readiness || latestResult.overall_readiness || 0) * 100)
-      : localResults ? Math.round(localResults.overallReadiness * 100) : 0;
+  const readiness = useMemo(() => {
+    if (threeLayerScore != null) return Math.round(threeLayerScore * 100);
+    if (latestResult) {
+      // If momentum is null, recompute as 50/50 technical + capability
+      if (momentumScore === null) {
+        const partial = (technicalMatch * 0.5) + (capabilityMatch * 0.5);
+        return Math.round(partial * 100);
+      }
+      return Math.round((latestResult.final_readiness || latestResult.overall_readiness || 0) * 100);
+    }
+    return localResults ? Math.round(localResults.overallReadiness * 100) : 0;
+  }, [threeLayerScore, latestResult, localResults, momentumScore, technicalMatch, capabilityMatch]);
 
   const gapAnalysis = latestResult?.gap_analysis
     ? latestResult.gap_analysis as unknown as { criticalGaps: Array<{ skill: string; currentProficiency: number; requiredProficiency: number; deficit: number; strategicWeight: number; weightedGap: number; priority: string }>; surplusSkills: Array<{ skill: string; current: number; required: number; surplus: number }>; interviewSurplus?: Array<{ skill: string; type: string; rating: string; evidence: string; relevance: string }>; normalizedGapScore: number; readinessPercent: number }
@@ -236,7 +243,7 @@ export default function AnalysisPage() {
         },
       });
       if (error) throw error;
-      const md = data.report;
+      const md = data?.reportMarkdown || data?.report_markdown || data?.report || '';
       setReport(md);
       await supabase.from("reports").insert({
         employee_id: id, role_id: targetRole.id,
@@ -307,10 +314,25 @@ export default function AnalysisPage() {
                   <span className="text-[11px] text-muted-foreground">& thinking patterns</span>
                 </div>
                 <div className="flex flex-col items-center">
-                  <ReadinessRing value={Math.round(momentumScore * 100)} size="md" />
+                  {momentumScore === null ? (
+                    <>
+                      <div className="relative" style={{ width: 80, height: 80 }}>
+                        <svg width={80} height={80} className="-rotate-90">
+                          <circle cx={40} cy={40} r={32} fill="none" stroke="hsl(var(--border))" strokeWidth={5} />
+                        </svg>
+                        <span className="absolute inset-0 flex items-center justify-center font-mono font-semibold text-muted-foreground" style={{ fontSize: 14 }}>N/A</span>
+                      </div>
+                    </>
+                  ) : (
+                    <ReadinessRing value={Math.round(momentumScore * 100)} size="md" />
+                  )}
                   <span className="text-xs font-semibold mt-1">Momentum Score</span>
-                  <span className="text-[11px] text-muted-foreground">Growth trajectory</span>
-                  <span className="text-[11px] text-muted-foreground">& role motivation</span>
+                  <span className="text-[11px] text-muted-foreground">
+                    {momentumScore === null ? 'Pending interview' : 'Growth trajectory'}
+                  </span>
+                  <span className="text-[11px] text-muted-foreground">
+                    {momentumScore === null ? 'data' : '& role motivation'}
+                  </span>
                 </div>
               </div>
 
@@ -359,6 +381,7 @@ export default function AnalysisPage() {
             color="hsl(142 76% 36%)"
             factors={momentumFactors.factors}
             standout={momentumFactors.standout}
+            isNull={momentumScore === null}
           />
         </div>
 
@@ -848,12 +871,13 @@ export default function AnalysisPage() {
 // ─── Score With Factors Component ───────────────────────────────────
 
 function ScoreWithFactors({
-  title, score, color, factors, standout, capabilityDetails,
+  title, score, color, factors, standout, capabilityDetails, isNull,
 }: {
-  title: string; score: number; color: string;
+  title: string; score: number | null; color: string;
   factors: { label: string; value: string; note: string }[];
   standout?: string;
   capabilityDetails?: [string, any][];
+  isNull?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -862,7 +886,16 @@ function ScoreWithFactors({
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <ReadinessRing value={Math.round(score * 100)} size="sm" />
+            {isNull ? (
+              <div className="relative" style={{ width: 48, height: 48 }}>
+                <svg width={48} height={48} className="-rotate-90">
+                  <circle cx={24} cy={24} r={18} fill="none" stroke="hsl(var(--border))" strokeWidth={4} />
+                </svg>
+                <span className="absolute inset-0 flex items-center justify-center font-mono font-semibold text-muted-foreground text-[10px]">N/A</span>
+              </div>
+            ) : (
+              <ReadinessRing value={Math.round((score || 0) * 100)} size="sm" />
+            )}
             <div>
               <p className="text-sm font-semibold">{title}</p>
               <p className="text-[11px] text-muted-foreground">Click to see what drives this</p>

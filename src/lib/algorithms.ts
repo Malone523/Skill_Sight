@@ -136,11 +136,11 @@ export function getAHPWeightsForRole(roleType: RoleType): { weights: number[]; m
 export function computeThreeLayerScore(
   technicalMatch: number,
   capabilityMatch: number,
-  momentumScore: number,
+  momentumScore: number | null,
   roleType: RoleType
 ): {
   threeLayerScore: number
-  breakdown: { technical: number; capability: number; momentum: number }
+  breakdown: { technical: number; capability: number; momentum: number | null }
   weights: { technical: number; capability: number; momentum: number }
   interpretation: string
 } {
@@ -153,14 +153,13 @@ export function computeThreeLayerScore(
   }
 
   const w = layerWeights[roleType]
-  const score = (technicalMatch * w.technical) + (capabilityMatch * w.capability) + (momentumScore * w.momentum)
+  
+  // If momentum is null, compute as 50/50 blend of technical and capability
+  const score = momentumScore === null
+    ? (technicalMatch * 0.5) + (capabilityMatch * 0.5)
+    : (technicalMatch * w.technical) + (capabilityMatch * w.capability) + (momentumScore * w.momentum)
 
-  let interpretation = ''
-  if (score >= 0.80) interpretation = 'Exceptionally strong candidate — ready with minor development'
-  else if (score >= 0.70) interpretation = 'Strong candidate — clear development path exists'
-  else if (score >= 0.60) interpretation = 'Promising candidate — meaningful gaps but strong trajectory'
-  else if (score >= 0.50) interpretation = 'Developing candidate — significant investment required'
-  else interpretation = 'Early stage — longer development horizon needed'
+  const interpretation = getInterpretation(score, technicalMatch, momentumScore, capabilityMatch)
 
   return {
     threeLayerScore: Math.round(score * 100) / 100,
@@ -168,6 +167,27 @@ export function computeThreeLayerScore(
     weights: w,
     interpretation
   }
+}
+
+function getInterpretation(score: number, technicalMatch: number, momentum: number | null, capabilityMatch: number): string {
+  if (momentum === null) {
+    if (technicalMatch >= 0.60 && capabilityMatch >= 0.55) return 'Strong technical profile — interview assessment pending for full score'
+    if (technicalMatch >= 0.40) return 'Solid technical foundation — interview data needed to assess growth potential'
+    return 'Early stage technical profile — significant development investment required'
+  }
+  if (score >= 0.80) return 'Exceptional candidate — ready with minor development'
+  if (score >= 0.70) return 'Strong candidate — clear development path exists'
+  if (score >= 0.60) {
+    if (momentum >= 0.75) return 'High-momentum candidate — technical gaps exist but trajectory is strong'
+    return 'Promising candidate — meaningful gaps but manageable with structured development'
+  }
+  if (score >= 0.50) {
+    if (momentum >= 0.70) return 'Strong growth profile — not yet technically ready but high learning velocity'
+    if (technicalMatch >= 0.65) return 'Solid technical base — limited momentum signals detected'
+    return 'Developing candidate — significant investment required across multiple dimensions'
+  }
+  if (technicalMatch >= 0.60) return 'Systems engineer with domain gaps — strong foundation, missing target-specific experience'
+  return 'Early stage — longer development horizon needed'
 }
 
 // ─── Algorithm 1: Cosine Similarity ─────────────────────────────────

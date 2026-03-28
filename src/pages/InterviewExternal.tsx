@@ -168,7 +168,7 @@ export default function InterviewExternal() {
             tenureYears: 0,
           },
         });
-        momentum = momentumResponse;
+        momentum = momentumResponse?.momentum;
       } catch (e) {
         console.error("Momentum computation failed:", e);
       }
@@ -212,10 +212,10 @@ export default function InterviewExternal() {
 
       const fullResults = runFullAnalysis(algorithmInput);
 
-      const momentumScore = momentum?.momentumScore || 0;
-      const learningVelocity = momentum?.learningVelocity || 0;
-      const scopeTrajectory = momentum?.scopeTrajectory || 0;
-      const motivationAlignment = momentum?.motivationAlignment || 0;
+      const momentumScoreVal = momentum?.momentum_score ?? null;
+      const learningVelocity = momentum?.learning_velocity ?? null;
+      const scopeTrajectory = momentum?.scope_trajectory ?? null;
+      const motivationAlignment = momentum?.motivation_alignment ?? null;
 
       const technicalMatch = fullResults.cosineSimilarity;
       const capabilityMatch = capabilityData
@@ -224,7 +224,7 @@ export default function InterviewExternal() {
           ).length / Math.max(Object.keys(capabilityData.capability_profile || {}).length, 1)
         : 0;
 
-      const threeLayer = computeThreeLayerScore(technicalMatch, capabilityMatch, momentumScore, roleType);
+      const threeLayer = computeThreeLayerScore(technicalMatch, capabilityMatch, momentumScoreVal, roleType);
 
       // Step 5: Update interview record
       await supabase.from("interviews").update({
@@ -257,7 +257,7 @@ export default function InterviewExternal() {
               threeLayerScore: threeLayer.threeLayerScore,
               technicalMatch,
               capabilityMatch,
-              momentumScore,
+              momentumScoreVal,
               roleType,
             },
             capabilityProfile: capabilityData?.capability_profile || {},
@@ -271,7 +271,7 @@ export default function InterviewExternal() {
             },
           },
         });
-        reportMarkdown = reportData?.report || "";
+        reportMarkdown = reportData?.reportMarkdown || reportData?.report_markdown || reportData?.report || "";
       } catch (e) {
         console.error("Report gen failed:", e);
       }
@@ -288,7 +288,7 @@ export default function InterviewExternal() {
           tfidf: fullResults.tfidfRarity,
           technicalMatch,
           capabilityMatch,
-          momentumScore,
+          momentumScoreVal,
           threeLayerScore: threeLayer.threeLayerScore,
           roleType,
           capabilityProfile: capabilityData?.capability_profile || {},
@@ -303,7 +303,7 @@ export default function InterviewExternal() {
 
       // Step 8: Evaluate for talent pool
       const meetsScoreThreshold = threeLayer.threeLayerScore >= 0.65;
-      const meetsMomentumThreshold = momentumScore >= 0.60;
+      const meetsMomentumThreshold = momentumScoreVal != null && momentumScoreVal >= 0.60;
       const meetsCapabilityThreshold = capabilityMatch >= 0.50;
       const shouldAddToPool = meetsScoreThreshold && meetsMomentumThreshold && meetsCapabilityThreshold;
 
@@ -312,7 +312,7 @@ export default function InterviewExternal() {
           status: "talent_pool",
           manager_decision: "approved_for_pool",
           manager_decision_at: new Date().toISOString(),
-          manager_decision_note: `Automatically promoted to talent pool after interview. Three-layer score: ${Math.round(threeLayer.threeLayerScore * 100)}%, Momentum: ${Math.round(momentumScore * 100)}%, Capability: ${Math.round(capabilityMatch * 100)}%`,
+          manager_decision_note: `Automatically promoted to talent pool after interview. Three-layer score: ${Math.round(threeLayer.threeLayerScore * 100)}%, Momentum: ${Math.round(((momentumScoreVal || 0) * 100))}%, Capability: ${Math.round(capabilityMatch * 100)}%`,
         } as any).eq("id", candidate.id);
       }
 
