@@ -201,7 +201,7 @@ export default function InterviewExternal() {
           requiredSkills: reqSkills,
           strategicWeights: stratWeights,
         },
-        allRoles: [{ id: candidate.roleId, title: candidate.roleTitle, requiredSkills: reqSkills }],
+        allRoles: [{ requiredSkills: reqSkills }],
       };
 
       // Animate steps
