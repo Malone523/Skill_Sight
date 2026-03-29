@@ -289,7 +289,7 @@ export default function ExternalCandidateProfile() {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       toast.success(`${candidate.name} has been promoted to internal employee!`);
-      navigate(`/employee/${data.employeeId}`);
+      navigate(`/employees/${data.employeeId}`);
     } catch (e: any) {
       toast.error(e.message || "Failed to promote candidate");
       setPromoting(false);
