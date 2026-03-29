@@ -168,21 +168,38 @@ function hybridWorthinessDecision(
     reasoning: string,
     score: number,
     confidence: 'high' | 'mixed_signals' | 'low'
-  ): HybridResult => ({
-    worthy,
-    confidence,
-    verdict: worthy ? 'recommend' : (confidence === 'mixed_signals' || confidence === 'low' ? 'flag' : 'reject'),
-    verdictLabel,
-    worthyScore: score,
-    reasoning: reasoning,
-    aiReasoning: aiJudgment?.ai_reasoning || '',
-    concerns: [...algoReasons, ...(aiJudgment?.ai_concerns || [])].slice(0, 3),
-    keyStrengths: (aiJudgment?.ai_key_strengths || []).slice(0, 3),
-    recommendedPreset: aiJudgment?.ai_recommended_preset || 'technical_depth',
-    recruiterNote: aiJudgment?.ai_recruiter_note || '',
-    domainGapClassification: domainGapClass,
-    seniorityCheck,
-  });
+  ): HybridResult => {
+    let verdict = worthy ? 'recommend' : (confidence === 'mixed_signals' || confidence === 'low' ? 'flag' : 'reject');
+    let finalDomainGap = domainGapClass;
+
+    // ── Verdict / domain_gaps consistency enforcement ──
+    // If domain_gaps = "critical" → verdict must be reject or hard_reject, never flag or recommend
+    if (finalDomainGap === 'critical' && (verdict === 'flag' || verdict === 'recommend')) {
+      verdict = 'reject';
+      worthy = false;
+    }
+    // If verdict = "flag" → domain_gaps must be "trainable", never "critical"
+    if (verdict === 'flag' && finalDomainGap === 'critical') {
+      verdict = 'reject';
+      worthy = false;
+    }
+
+    return {
+      worthy,
+      confidence,
+      verdict,
+      verdictLabel,
+      worthyScore: score,
+      reasoning: reasoning,
+      aiReasoning: aiJudgment?.ai_reasoning || '',
+      concerns: [...algoReasons, ...(aiJudgment?.ai_concerns || [])].slice(0, 3),
+      keyStrengths: (aiJudgment?.ai_key_strengths || []).slice(0, 3),
+      recommendedPreset: aiJudgment?.ai_recommended_preset || 'technical_depth',
+      recruiterNote: aiJudgment?.ai_recruiter_note || '',
+      domainGapClassification: finalDomainGap,
+      seniorityCheck,
+    };
+  };
 
   // High-potential override → FLAG
   if (isHighPotential && !algoWorthy) {
