@@ -275,7 +275,7 @@ export default function ExternalCandidateProfile() {
                   <div className="w-12 h-12 rounded-full border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
                     <span className="text-[10px]">—</span>
                   </div>
-                  <span className="text-xs">Pending Assessment</span>
+                  <span className="text-xs">Awaiting Assessment</span>
                 </div>
               )}
             </div>
