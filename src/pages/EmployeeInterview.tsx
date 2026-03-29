@@ -8,6 +8,7 @@ import { SkillBadge } from "@/components/SkillBadge";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Sparkles, Check, ArrowLeft } from "lucide-react";
 import { usePipeline } from "@/contexts/PipelineContext";
+import { parseRequiredSkills } from "@/lib/utils";
 
 type Phase = "role_selection" | "interviewing" | "algorithms_running" | "complete";
 interface Message { role: "ai" | "user"; content: string; timestamp: Date }

@@ -15,6 +15,7 @@ import { Check, Clock, AlertCircle, Sparkles, ChevronRight, Users, BarChart3, Ma
 import { useState, useMemo, useEffect } from "react";
 import { PRESET_PACKS } from "@/lib/presetPacks";
 import { toast } from "@/hooks/use-toast";
+import { skillsToVector, formatSkillName } from "@/lib/utils";
 
 export default function EmployeeProfile() {
   const { id } = useParams();
