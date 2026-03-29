@@ -22,8 +22,8 @@ export default function ManagerInterview() {
   const { profile } = useAuth();
 
   const [phase, setPhase] = useState<Phase>("setup");
-  const [managerName, setManagerName] = useState(profile?.full_name || "");
-  const [managerTitle, setManagerTitle] = useState(profile?.role === "manager" ? "Manager" : "");
+  const [managerName, setManagerName] = useState("");
+  const [managerTitle, setManagerTitle] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isAiTyping, setIsAiTyping] = useState(false);
@@ -38,6 +38,19 @@ export default function ManagerInterview() {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isAiTyping]);
+
+  // Auto-fill manager info from profile and skip setup
+  const autoStartedRef = useRef(false);
+  useEffect(() => {
+    if (autoStartedRef.current || !profile || !employee || phase !== "setup") return;
+    const name = profile.full_name || "Manager";
+    const title = profile.role === "manager" ? "Senior Manager" : (profile.role || "Manager");
+    setManagerName(name);
+    setManagerTitle(title);
+    autoStartedRef.current = true;
+    // Go straight to interviewing
+    setPhase("interviewing");
+  }, [profile, employee, phase]);
 
   const MAX_QUESTIONS = 10;
 
@@ -196,10 +209,18 @@ export default function ManagerInterview() {
     setTimeout(() => navigate(`/analysis/${id}`), 3000);
   };
 
+  // Send first AI message when interview starts
+  const firstMessageSentRef = useRef(false);
+  useEffect(() => {
+    if (phase === "interviewing" && !firstMessageSentRef.current && messages.length === 0) {
+      firstMessageSentRef.current = true;
+      setTimeout(() => sendMessage(), 300);
+    }
+  }, [phase, messages.length, sendMessage]);
+
   const beginInterview = () => {
     if (!managerName.trim() || !managerTitle.trim()) return;
     setPhase("interviewing");
-    setTimeout(() => sendMessage(), 300);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -233,16 +254,33 @@ export default function ManagerInterview() {
 
         {phase === "setup" && (
           <div className="card-skillsight p-4 space-y-3">
-            <label className="text-xs font-medium">Manager Name *</label>
-            <Input value={managerName} onChange={e => setManagerName(e.target.value)} placeholder="Your name" className="h-9 text-sm" />
-            <label className="text-xs font-medium">Manager Title *</label>
-            <Input value={managerTitle} onChange={e => setManagerTitle(e.target.value)} placeholder="Your title" className="h-9 text-sm" />
-            <Button onClick={beginInterview} disabled={!managerName.trim() || !managerTitle.trim()} className="w-full">Begin Conversation</Button>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-bold">
+                {(profile?.full_name || "M").split(" ").map(n => n[0]).join("").slice(0, 2)}
+              </div>
+              <div>
+                <p className="text-sm font-semibold">{profile?.full_name || "Manager"}</p>
+                <p className="text-xs text-muted-foreground">{profile?.role === "manager" ? "Senior Manager" : "Manager"}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <LoadingSpinner variant="inline" />
+              <span>Starting conversation...</span>
+            </div>
           </div>
         )}
 
         {phase === "interviewing" && (
           <>
+            <div className="card-skillsight p-3 flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-bold shrink-0">
+                {managerName.split(" ").map(n => n[0]).join("").slice(0, 2)}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold truncate">{managerName}</p>
+                <p className="text-[10px] text-muted-foreground truncate">{managerTitle}</p>
+              </div>
+            </div>
             <div className="card-skillsight p-3">
              <p className="text-[13px] font-semibold">Question {Math.min(questionsAsked, MAX_QUESTIONS)} / {MAX_QUESTIONS}</p>
               <div className="h-1 rounded-full bg-secondary mt-2 overflow-hidden">
