@@ -180,6 +180,12 @@ export default function ExternalCandidateProfile() {
   };
 
   const statusBadge = () => {
+    // Check for hard_reject verdict in hybridInfo
+    const isHardReject = hybridInfo?.verdict === 'hard_reject';
+    if (isHardReject) {
+      return <Badge variant="secondary" className="text-[10px] bg-gray-200 text-gray-600 dark:bg-gray-800 dark:text-gray-400">Declined</Badge>;
+    }
+
     const map: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; className?: string }> = {
       pending_manager_review: { label: "Pending Review", variant: "outline" },
       below_threshold: { label: "Below Threshold", variant: "destructive" },
