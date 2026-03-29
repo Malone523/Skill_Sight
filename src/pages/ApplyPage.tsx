@@ -307,8 +307,8 @@ export default function ApplyPage() {
         targetRole: {
           id: selectedRoleId!,
           title: selectedRole.title,
-          requiredSkills: selectedRole.required_skills || {},
-          strategicWeights: selectedRole.strategic_weights || {},
+          requiredSkills: (selectedRole.required_skills || {}) as Record<string, number>,
+          strategicWeights: (selectedRole.strategic_weights || {}) as Record<string, number>,
         },
         allRoles: allRoles.map((r: any) => ({ requiredSkills: r.required_skills || {} })),
       };
