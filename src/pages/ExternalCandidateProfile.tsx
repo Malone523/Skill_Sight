@@ -802,6 +802,41 @@ export default function ExternalCandidateProfile() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {/* Manager Insights Dialog */}
+      <Dialog open={insightsOpen} onOpenChange={setInsightsOpen}>
+        <DialogContent className="max-w-[520px]">
+          <DialogHeader>
+            <DialogTitle>In-Person Interview Insights</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">Share your observations from the in-person interview with {candidate.name}. These insights will be used by AI to generate their employee profile.</p>
+          <div className="space-y-3 max-h-[50vh] overflow-y-auto">
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Cultural Fit & Team Dynamics</label>
+              <Textarea placeholder="How well would they integrate with the team? Any cultural alignment or concerns?" value={managerInsights.culturalFit} onChange={e => setManagerInsights(p => ({ ...p, culturalFit: e.target.value }))} rows={2} className="mt-1" />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Communication Style</label>
+              <Textarea placeholder="How did they communicate? Clear, articulate, confident, reserved?" value={managerInsights.communicationStyle} onChange={e => setManagerInsights(p => ({ ...p, communicationStyle: e.target.value }))} rows={2} className="mt-1" />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Leadership Potential</label>
+              <Textarea placeholder="Did they show initiative, problem-solving ability, or leadership qualities?" value={managerInsights.leadershipPotential} onChange={e => setManagerInsights(p => ({ ...p, leadershipPotential: e.target.value }))} rows={2} className="mt-1" />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Technical Depth Impression</label>
+              <Textarea placeholder="How well did they demonstrate technical knowledge during the conversation?" value={managerInsights.technicalDepth} onChange={e => setManagerInsights(p => ({ ...p, technicalDepth: e.target.value }))} rows={2} className="mt-1" />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Concerns or Risks</label>
+              <Textarea placeholder="Any red flags, hesitations, or areas needing development?" value={managerInsights.concernsOrRisks} onChange={e => setManagerInsights(p => ({ ...p, concernsOrRisks: e.target.value }))} rows={2} className="mt-1" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setInsightsOpen(false)}>Cancel</Button>
+            <Button onClick={handleSubmitInsights}>Confirm & Mark Passed</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
