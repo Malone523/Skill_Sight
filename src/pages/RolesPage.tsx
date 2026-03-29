@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { SkillBadge } from "@/components/SkillBadge";
+import { formatSkillName, parseRequiredSkills, skillsToWeights } from "@/lib/utils";
 import type { SkillVector } from "@/lib/algorithms";
 
 interface SkillReq { name: string; required: number; weight: number | string }
@@ -61,9 +62,11 @@ export default function RolesPage() {
   const openEdit = (role: any) => {
     setEditId(role.id); setTitle(role.title); setDepartment(role.department || ""); setDescription(role.description || "");
     setHeadcount(role.headcount_needed || 1); setHiringStatus((role as any).hiring_status || 'actively_hiring');
-    const req = (role.required_skills || {}) as Record<string, number>;
-    const w = (role.strategic_weights || {}) as Record<string, number>;
-    setSkillReqs(Object.entries(req).map(([name, required]) => ({ name, required, weight: w[name] || 0.5 })));
+    const parsed = parseRequiredSkills(role.required_skills);
+    const weights = skillsToWeights(role.required_skills);
+    // For old format, try strategic_weights
+    const sw = (role.strategic_weights || {}) as Record<string, number>;
+    setSkillReqs(parsed.map(s => ({ name: s.name, required: s.required_level, weight: s.weight || sw[s.name] || 0.5 })));
     setEditOpen(true);
   };
 
@@ -107,7 +110,7 @@ export default function RolesPage() {
 
         <div className="grid grid-cols-2 gap-4">
           {roles?.map(role => {
-            const reqSkills = Object.keys((role.required_skills || {}) as Record<string, number>);
+            const parsedSkills = parseRequiredSkills(role.required_skills);
             const assessedCount = allResults?.filter(r => r.role_id === role.id).length || 0;
             const status = (role as any).hiring_status || 'actively_hiring';
             const statusCfg = hiringStatusConfig[status] || hiringStatusConfig.actively_hiring;
@@ -128,15 +131,15 @@ export default function RolesPage() {
                     <p className="text-xs text-muted-foreground mb-2">{role.description?.substring(0, 80)}{(role.description?.length || 0) > 80 ? '…' : ''}</p>
                   )}
                   <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
-                    <span>{reqSkills.length} required skills</span>
+                    <span>{parsedSkills.length} required skills</span>
                     <span>·</span>
                     <span>{assessedCount} employees assessed</span>
                   </div>
                   <div className="flex flex-wrap gap-1 mb-3">
-                    {reqSkills.slice(0, 5).map(s => (
-                      <Badge key={s} variant="outline" className="text-[10px]">{s.replace(/([A-Z])/g, ' $1').trim()}</Badge>
+                    {parsedSkills.slice(0, 5).map(s => (
+                      <Badge key={s.name} variant="outline" className="text-[10px]">{formatSkillName(s.name)}</Badge>
                     ))}
-                    {reqSkills.length > 5 && <Badge variant="secondary" className="text-[10px]">+{reqSkills.length - 5} more</Badge>}
+                    {parsedSkills.length > 5 && <Badge variant="secondary" className="text-[10px]">+{parsedSkills.length - 5} more</Badge>}
                   </div>
                   <div className="flex items-center gap-2">
                     <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => { setDetailRole(role); setDetailOpen(true); }}>
@@ -316,11 +319,11 @@ export default function RolesPage() {
                     <th className="text-center py-1 text-xs">Strategic Weight</th>
                   </tr></thead>
                   <tbody>
-                    {Object.entries((detailRole.required_skills || {}) as Record<string, number>).map(([skill, level]) => (
-                      <tr key={skill} className="border-b border-border/50">
-                        <td className="py-1.5">{skill.replace(/([A-Z])/g, ' $1').trim()}</td>
-                        <td className="text-center font-mono">{level}/3</td>
-                        <td className="text-center font-mono">{((detailRole.strategic_weights as Record<string, number>)?.[skill] || 0.5).toFixed(2)}</td>
+                    {parseRequiredSkills(detailRole.required_skills).map((s) => (
+                      <tr key={s.name} className="border-b border-border/50">
+                        <td className="py-1.5">{formatSkillName(s.name)}</td>
+                        <td className="text-center font-mono">{s.required_level}/3</td>
+                        <td className="text-center font-mono">{s.weight.toFixed(2)}</td>
                       </tr>
                     ))}
                   </tbody>

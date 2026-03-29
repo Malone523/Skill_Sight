@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { formatSkillName } from "@/lib/utils";
+import { formatSkillName, skillsToVector, skillsToWeights } from "@/lib/utils";
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { ReadinessRing } from "@/components/ReadinessRing";
@@ -46,8 +46,8 @@ export default function AnalysisPage() {
     if (!employee || !targetRole || !skills) return null;
     const empSkills: SkillVector = {};
     skills.forEach(s => { empSkills[s.skill_name] = s.proficiency || 0; });
-    const reqSkills = (targetRole.required_skills || {}) as SkillVector;
-    const stratWeights = (targetRole.strategic_weights || {}) as SkillVector;
+    const reqSkills = skillsToVector(targetRole.required_skills);
+    const stratWeights = skillsToWeights(targetRole.required_skills);
     return {
       employee: {
         id: employee.id, name: employee.name, skills: empSkills,
@@ -59,7 +59,7 @@ export default function AnalysisPage() {
         id: targetRole.id, title: targetRole.title,
         requiredSkills: reqSkills, strategicWeights: stratWeights,
       },
-      allRoles: roles?.map(r => ({ requiredSkills: (r.required_skills || {}) as SkillVector })),
+      allRoles: roles?.map(r => ({ requiredSkills: skillsToVector(r.required_skills) })),
     };
   }, [employee, targetRole, skills, roles]);
 
@@ -118,7 +118,7 @@ export default function AnalysisPage() {
 
   const radarData = useMemo(() => {
     if (!targetRole?.required_skills || !skills) return [];
-    const reqSkills = targetRole.required_skills as Record<string, number>;
+    const reqSkills = skillsToVector(targetRole.required_skills);
     return Object.entries(reqSkills).map(([skill, required]) => {
       const empSkill = skills.find(s => s.skill_name === skill);
       return { skill: formatSkillName(skill), employee: empSkill?.proficiency || 0, required };

@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Shield, Send, Check, Sparkles, Brain, BarChart3, Target, Cpu, Zap } from "lucide-react";
 import { runFullAnalysis, detectRoleType, computeThreeLayerScore, getAHPWeightsForRole, type AlgorithmInput, type SkillVector, type RoleType } from "@/lib/algorithms";
+import { skillsToVector, skillsToWeights } from "@/lib/utils";
 
 interface Message { role: "ai" | "user"; content: string; timestamp: Date; }
 type Phase = "interviewing" | "processing" | "complete" | "expired";
@@ -77,7 +78,7 @@ export default function InterviewExternal() {
     setIsAiTyping(true);
 
     try {
-      const targetSkills = Object.keys(candidate.requiredSkills || {});
+      const targetSkills = Object.keys(skillsToVector(candidate.requiredSkills));
       const { data, error } = await supabase.functions.invoke("interview-chat", {
         body: {
           messages: newMessages.map(m => ({ role: m.role, content: m.content })),
@@ -179,11 +180,11 @@ export default function InterviewExternal() {
         empSkills[k] = typeof v === "number" ? v : v?.proficiency || 0;
       });
 
-      const reqSkills = (candidate.requiredSkills || {}) as SkillVector;
-      const stratWeights = (candidate.strategicWeights || {}) as SkillVector;
+      const reqSkills = skillsToVector(candidate.requiredSkills);
+      const stratWeights = skillsToWeights(candidate.requiredSkills);
       const roleType: RoleType = detectRoleType(
         reqSkills as Record<string, number>,
-        stratWeights as Record<string, number>
+        { ...stratWeights, ...(candidate.strategicWeights || {}) } as Record<string, number>
       );
 
       const algorithmInput: AlgorithmInput = {

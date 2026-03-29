@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { useEmployees, useAllEmployeeSkills, useRoles } from "@/hooks/useData";
 import { supabase } from "@/integrations/supabase/client";
 import { cosineSimilarity, weightedGapScore, type AlgorithmInput, type SkillVector, type GapItem } from "@/lib/algorithms";
+import { skillsToVector, skillsToWeights } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -70,8 +71,8 @@ export default function InternalReorg() {
 
     await new Promise(r => setTimeout(r, 1500));
 
-    const reqSkills = (selectedRole.required_skills || {}) as SkillVector;
-    const stratWeights = (selectedRole.strategic_weights || {}) as SkillVector;
+    const reqSkills = skillsToVector(selectedRole.required_skills);
+    const stratWeights = skillsToWeights(selectedRole.required_skills);
 
     // Fetch existing three-layer scores from DB
     const { data: dbResults } = await supabase
@@ -99,7 +100,7 @@ export default function InternalReorg() {
           tenureYears: emp.tenure_years || 0,
         },
         targetRole: { id: selectedRole.id, title: selectedRole.title, requiredSkills: reqSkills, strategicWeights: stratWeights },
-        allRoles: roles.map(r => ({ requiredSkills: (r.required_skills || {}) as SkillVector })),
+        allRoles: roles.map(r => ({ requiredSkills: skillsToVector(r.required_skills) })),
       };
 
       const cosine = cosineSimilarity(input);

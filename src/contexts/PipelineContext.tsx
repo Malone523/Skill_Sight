@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { runFullAnalysis, type AlgorithmInput, type SkillVector } from "@/lib/algorithms";
+import { skillsToVector, skillsToWeights } from "@/lib/utils";
 
 type Phase = 'idle' | 'interview_active' | 'algorithms' | 'generating_report' | 'complete' | 'error';
 
@@ -80,10 +81,10 @@ export function PipelineProvider({ children }: { children: React.ReactNode }) {
         },
         targetRole: {
           id: role.id, title: role.title,
-          requiredSkills: (role.required_skills || {}) as SkillVector,
-          strategicWeights: (role.strategic_weights || {}) as SkillVector,
+          requiredSkills: skillsToVector(role.required_skills),
+          strategicWeights: skillsToWeights(role.required_skills),
         },
-        allRoles: allRoles?.map(r => ({ requiredSkills: (r.required_skills || {}) as SkillVector })),
+        allRoles: allRoles?.map(r => ({ requiredSkills: skillsToVector(r.required_skills) })),
       };
 
       const results = runFullAnalysis(input);

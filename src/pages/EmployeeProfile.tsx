@@ -15,6 +15,7 @@ import { Check, Clock, AlertCircle, Sparkles, ChevronRight, Users, BarChart3, Ma
 import { useState, useMemo, useEffect } from "react";
 import { PRESET_PACKS } from "@/lib/presetPacks";
 import { toast } from "@/hooks/use-toast";
+import { skillsToVector, formatSkillName } from "@/lib/utils";
 
 export default function EmployeeProfile() {
   const { id } = useParams();
@@ -59,13 +60,13 @@ export default function EmployeeProfile() {
   const selectedRole = roles?.find(r => r.id === (selectedRoleId || latestResult?.role_id));
   const radarData = useMemo(() => {
     if (!skills?.length) return [];
-    const requiredSkills = selectedRole?.required_skills as Record<string, number> | null;
+    const requiredSkills = skillsToVector(selectedRole?.required_skills);
     const allSkillNames = new Set<string>();
     skills.forEach(s => allSkillNames.add(s.skill_name));
     if (requiredSkills) Object.keys(requiredSkills).forEach(s => allSkillNames.add(s));
 
     return Array.from(allSkillNames).map(name => ({
-      skill: name.replace(/([A-Z])/g, ' $1').trim(),
+      skill: formatSkillName(name),
       employee: (skills.find(s => s.skill_name === name)?.proficiency || 0),
       role: requiredSkills?.[name] || 0,
     }));

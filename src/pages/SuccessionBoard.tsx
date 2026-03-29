@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { PageHeader } from "@/components/PageHeader";
 import { useEmployees, useAllEmployeeSkills, useRoles, useAlgorithmResults } from "@/hooks/useData";
 import { cosineSimilarity, weightedGapScore, runAHP, detectRoleType, type AlgorithmInput, type SkillVector, type RoleType } from "@/lib/algorithms";
+import { skillsToVector, skillsToWeights } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ReadinessRing } from "@/components/ReadinessRing";
@@ -36,9 +37,11 @@ export default function SuccessionBoard() {
     if (!employees || !allSkills || !roles) return [];
 
     return roles.filter(r => r.is_open).map(role => {
-      const reqSkills = (role.required_skills || {}) as SkillVector;
-      const stratWeights = (role.strategic_weights || {}) as SkillVector;
-      const roleType: RoleType = detectRoleType(reqSkills as Record<string, number>, stratWeights as Record<string, number>);
+      const reqSkills = skillsToVector(role.required_skills);
+      const stratWeights = skillsToWeights(role.required_skills);
+      // Merge explicit strategic_weights for role_type detection
+      const swMerged = { ...stratWeights, ...((role.strategic_weights || {}) as Record<string, any>) };
+      const roleType: RoleType = detectRoleType(reqSkills as Record<string, number>, swMerged as Record<string, number>);
 
       // Internal candidates
       const internalCandidates = employees.map(emp => {
@@ -53,7 +56,7 @@ export default function SuccessionBoard() {
             tenureYears: emp.tenure_years || 0,
           },
           targetRole: { id: role.id, title: role.title, requiredSkills: reqSkills, strategicWeights: stratWeights },
-          allRoles: roles.map(r => ({ requiredSkills: (r.required_skills || {}) as SkillVector })),
+          allRoles: roles.map(r => ({ requiredSkills: skillsToVector(r.required_skills) })),
         };
 
         const cosine = cosineSimilarity(input);

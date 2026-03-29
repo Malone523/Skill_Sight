@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useEmployee, useInterviews, useRoles } from "@/hooks/useData";
 import { supabase } from "@/integrations/supabase/client";
 import { runFullAnalysis, detectRoleType, computeThreeLayerScore, getAHPWeightsForRole, type AlgorithmInput, type SkillVector, type RoleType } from "@/lib/algorithms";
+import { skillsToVector, skillsToWeights } from "@/lib/utils";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -240,7 +241,7 @@ export default function MyInterview() {
 
       const roleType: RoleType = targetRole
         ? detectRoleType(
-            (targetRole.required_skills || {}) as Record<string, number>,
+            skillsToVector(targetRole.required_skills),
             (targetRole.strategic_weights || {}) as Record<string, number>
           )
         : "technical_specialist";
@@ -326,10 +327,10 @@ export default function MyInterview() {
         targetRole: {
           id: targetRole.id,
           title: targetRole.title,
-          requiredSkills: (targetRole.required_skills || {}) as SkillVector,
-          strategicWeights: (targetRole.strategic_weights || {}) as SkillVector,
+          requiredSkills: skillsToVector(targetRole.required_skills),
+          strategicWeights: skillsToWeights(targetRole.required_skills),
         },
-        allRoles: allRoles?.map(r => ({ requiredSkills: (r.required_skills || {}) as SkillVector })),
+        allRoles: allRoles?.map(r => ({ requiredSkills: skillsToVector(r.required_skills) })),
       };
 
       // Animate algorithm steps

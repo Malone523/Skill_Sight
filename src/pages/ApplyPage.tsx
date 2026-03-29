@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Clock, Shield, CheckCircle, FileText, Loader2, AlertTriangle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { runFullAnalysis, detectRoleType } from "@/lib/algorithms";
+import { skillsToVector, skillsToWeights } from "@/lib/utils";
 
 function useAllRoles() {
   return useQuery({
@@ -332,7 +333,7 @@ export default function ApplyPage() {
     try {
       // Phase 1: Parse CV
       setPhase("parsing");
-      const roleType = detectRoleType((selectedRole.required_skills || {}) as Record<string, number>, (selectedRole.strategic_weights || {}) as Record<string, number>);
+      const roleType = detectRoleType(skillsToVector(selectedRole.required_skills), (selectedRole.strategic_weights || {}) as Record<string, number>);
 
       const parseResponse = await supabase.functions.invoke("parse-cv", {
         body: {
@@ -366,10 +367,10 @@ export default function ApplyPage() {
         targetRole: {
           id: selectedRoleId!,
           title: selectedRole.title,
-          requiredSkills: (selectedRole.required_skills || {}) as Record<string, number>,
-          strategicWeights: (selectedRole.strategic_weights || {}) as Record<string, number>,
+          requiredSkills: skillsToVector(selectedRole.required_skills),
+          strategicWeights: skillsToWeights(selectedRole.required_skills),
         },
-        allRoles: allRoles.map((r: any) => ({ requiredSkills: r.required_skills || {} })),
+        allRoles: allRoles.map((r: any) => ({ requiredSkills: skillsToVector(r.required_skills) })),
       };
 
       const results = runFullAnalysis(algorithmInput);
