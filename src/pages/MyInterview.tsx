@@ -467,7 +467,6 @@ export default function MyInterview() {
   const completedInterviews = interviews?.filter(
     i => i.interview_type === "employee" && i.status === "completed"
   ) || [];
-  const [viewingPastInterview, setViewingPastInterview] = useState<string | null>(null);
 
   const pastInterviewToView = completedInterviews.find(i => i.id === viewingPastInterview);
   const pastConversation = (pastInterviewToView?.conversation_history as any[] || []);
