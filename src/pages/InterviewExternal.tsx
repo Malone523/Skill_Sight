@@ -176,17 +176,18 @@ export default function InterviewExternal() {
       }
 
       // Step 4: Run algorithms with animation
-      // Merge CV skills + interview-demonstrated skills
-      const empSkills: SkillVector = {};
-      // First load CV-based skills from the candidate's worthy_score context
-      const cvText = candidate.candidateMessage || "";
-      // Add interview-extracted skills
-      Object.entries(extractedSkills).forEach(([k, v]: [string, any]) => {
-        const prof = typeof v === "number" ? v : v?.proficiency || 0;
-        empSkills[k] = Math.max(empSkills[k] || 0, prof);
-      });
-
+      // Get role skill names for mapping
+      const parsedRoleSkills = parseRequiredSkills(candidate.requiredSkills);
+      const roleSkillNames = parsedRoleSkills.map(s => s.name);
       const reqSkills = skillsToVector(candidate.requiredSkills);
+
+      // Merge CV skills + interview-demonstrated skills using role display names
+      const empSkills: SkillVector = {};
+      // Map interview-extracted skills to role display names
+      const mappedInterviewSkills = mapInterviewSkillsToRoleKeys(extractedSkills, roleSkillNames);
+      Object.entries(mappedInterviewSkills).forEach(([k, v]) => {
+        empSkills[k] = Math.max(empSkills[k] || 0, v);
+      });
       const stratWeights = skillsToWeights(candidate.requiredSkills);
       const roleType: RoleType = detectRoleType(
         reqSkills as Record<string, number>,
