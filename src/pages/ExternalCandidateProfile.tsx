@@ -283,29 +283,25 @@ export default function ExternalCandidateProfile() {
 
           {/* Action buttons */}
           <div className="flex flex-wrap gap-2 mt-4">
-            {(candidate.status === "pending_manager_review" || candidate.status === "flagged_review" || ((candidate as any).submission_source === "candidate_self_submit" && (candidate as any).manager_decision === "pending" && candidate.interview_worthy)) && (
+             {(candidate.status === "pending_manager_review" || candidate.status === "flagged_review" || ((candidate as any).submission_source === "candidate_self_submit" && (candidate as any).manager_decision === "pending" && candidate.interview_worthy)) && (
               <>
                 <Button size="sm" className="bg-green-600 hover:bg-green-700 text-xs" onClick={handleApprove}>
-                  <CheckCircle className="h-3 w-3 mr-1" />{candidate.status === "flagged_review" ? "Approve — Send Interview Code" : "Send Interview Code"}
+                  <CheckCircle className="h-3 w-3 mr-1" />Approve for Interview
                 </Button>
                 <Button variant="outline" size="sm" className="text-xs text-destructive border-destructive/30" onClick={() => setDeclineOpen(true)}>
-                  <XCircle className="h-3 w-3 mr-1" />{candidate.status === "flagged_review" ? "Reject" : "Decline"}
+                  <XCircle className="h-3 w-3 mr-1" />Decline
                 </Button>
               </>
             )}
             {candidate.status === "invited" && candidate.access_code && (
-              <>
-                <Button variant="outline" size="sm" className="text-xs" onClick={() => { navigator.clipboard.writeText(candidate.access_code!); toast.success("Code copied"); }}>
-                  <Copy className="h-3 w-3 mr-1" />Copy Code
-                </Button>
-              </>
+              <Button variant="outline" size="sm" className="text-xs" onClick={() => { navigator.clipboard.writeText(candidate.access_code!); toast.success("Code copied"); }}>
+                <Copy className="h-3 w-3 mr-1" />Copy Code
+              </Button>
             )}
             {isCompleted && (
-              <>
-                <Button size="sm" className="text-xs" onClick={() => navigate(`/analysis-external/${candidate.id}`)}>
-                  View Full Assessment
-                </Button>
-              </>
+              <Button size="sm" className="text-xs" onClick={() => navigate(`/analysis-external/${candidate.id}`)}>
+                View Full Assessment
+              </Button>
             )}
             {(candidate.status === "rejected" || candidate.status === "below_threshold") && (
               <Button variant="destructive" size="sm" className="text-xs" onClick={() => setDeleteOpen(true)}>
