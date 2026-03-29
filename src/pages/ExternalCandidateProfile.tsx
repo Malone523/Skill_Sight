@@ -366,6 +366,32 @@ export default function ExternalCandidateProfile() {
                 <FileText className="h-3 w-3 mr-1" />View Submitted CV
               </Button>
             )}
+            {/* Interview Pass Toggle */}
+            {cvPassed && hybridInfo?.verdict !== 'hard_reject' && candidate.status !== "rejected" && candidate.status !== "below_threshold" && (
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-border bg-muted/30">
+                <span className="text-xs text-muted-foreground">In-Person Interview Passed:</span>
+                <Switch
+                  checked={interviewPassed}
+                  onCheckedChange={handleToggleInterviewPassed}
+                />
+                <span className={`text-xs font-medium ${interviewPassed ? "text-green-600" : "text-muted-foreground"}`}>
+                  {interviewPassed ? "Yes" : "No"}
+                </span>
+              </div>
+            )}
+            {/* Promote to Employee */}
+            {canPromote && candidate.status !== "promoted" && (
+              <Button size="sm" className="text-xs bg-primary hover:bg-primary/90" onClick={handlePromote} disabled={promoting}>
+                {promoting ? (
+                  <><Loader2 className="h-3 w-3 mr-1 animate-spin" />Generating Profile...</>
+                ) : (
+                  <><UserPlus className="h-3 w-3 mr-1" />Promote to Employee</>
+                )}
+              </Button>
+            )}
+            {candidate.status === "promoted" && (
+              <Badge className="bg-green-100 text-green-800 border-green-300 text-xs">✓ Promoted to Internal Employee</Badge>
+            )}
           </div>
         </div>
 
