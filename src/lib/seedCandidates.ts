@@ -455,7 +455,8 @@ export async function seedDemoCandidates(
         parsed.extracted_skills,
         role,
         parsed.experience_profile,
-        aiJudgment
+        aiJudgment,
+        candidate.cvText
       );
 
       let candidateStatus: string;

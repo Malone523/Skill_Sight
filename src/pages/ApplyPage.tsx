@@ -117,7 +117,8 @@ export default function ApplyPage() {
         parsed.extracted_skills,
         selectedRole,
         parsed.experience_profile,
-        aiJudgment
+        aiJudgment,
+        cvText
       );
 
       // Determine status
