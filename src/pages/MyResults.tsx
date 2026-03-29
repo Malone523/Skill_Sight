@@ -27,11 +27,6 @@ export default function MyResults() {
     : 0;
 
   const gapAnalysis = latestResult?.gap_analysis as any;
-  const upskillingPaths = (latestResult?.upskilling_paths || []) as Array<{
-    targetSkill: string;
-    path: string[];
-    totalWeeks: number;
-  }>;
 
   // Fetch report
   useEffect(() => {
