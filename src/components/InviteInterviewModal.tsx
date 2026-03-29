@@ -137,7 +137,7 @@ export function InviteInterviewModal({ open, onOpenChange, employee, onSent }: P
               })}
               <button
                 onClick={() => { setPresetPack("custom"); setCustomFocus(""); }}
-                className={`col-span-2 flex items-center gap-2 text-left p-2 rounded-md border transition-all ${presetPack === "custom" ? "border-primary bg-primary/5 ring-1 ring-primary/20" : "border-border hover:border-primary/30"}`}
+                className={`col-span-3 flex items-center justify-center gap-2 p-3 rounded-md border transition-all ${presetPack === "custom" ? "border-primary bg-primary/5 ring-1 ring-primary/20" : "border-border hover:border-primary/30"}`}
               >
                 <PenLine className={`h-4 w-4 shrink-0 ${presetPack === "custom" ? "text-primary" : "text-muted-foreground"}`} />
                 <p className="text-[11px] font-semibold leading-tight">Other</p>
