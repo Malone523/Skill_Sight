@@ -352,28 +352,6 @@ export default function EmployeeList() {
         {/* External candidates grid */}
         {viewMode === "external" && (
           <div className="space-y-4">
-            {/* Sub-filter tabs */}
-            <div className="flex gap-1">
-              {[
-                { value: "all" as const, label: "All" },
-                { value: "pending" as const, label: `Pending Review${pendingCount > 0 ? ` (${pendingCount})` : ""}` },
-                { value: "flagged" as const, label: `Flagged${flaggedCount > 0 ? ` (${flaggedCount})` : ""}`, amber: true },
-              ].map(f => (
-                <button
-                  key={f.value}
-                  onClick={() => setExtFilter(f.value)}
-                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                    extFilter === f.value
-                      ? (f as any).amber ? "bg-amber-500 text-white"
-                        : "bg-primary text-primary-foreground"
-                      : "bg-secondary text-muted-foreground hover:bg-accent"
-                  }`}
-                >
-                  {f.label}
-                </button>
-              ))}
-            </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {filteredExternal.length === 0 ? (
                 <div className="col-span-full text-center py-12">
