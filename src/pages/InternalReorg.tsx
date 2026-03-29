@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { useEmployees, useAllEmployeeSkills, useRoles } from "@/hooks/useData";
 import { supabase } from "@/integrations/supabase/client";
 import { cosineSimilarity, weightedGapScore, type AlgorithmInput, type SkillVector, type GapItem } from "@/lib/algorithms";
+import { skillsToVector, skillsToWeights } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
