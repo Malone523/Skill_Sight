@@ -311,334 +311,96 @@ export default function ExternalCandidateProfile() {
           </div>
         </div>
 
-        {/* Hybrid Verdict Banner */}
+        {/* Unified Assessment Summary (replaces old hybrid verdict + AI Screening Decision) */}
         {hybridInfo && (() => {
-          const builderRatio = hybridInfo.builder_verb_ratio != null ? hybridInfo.builder_verb_ratio : null;
-          const metricsCount = hybridInfo.metrics_count != null ? hybridInfo.metrics_count : null;
+          const verdictLabel = hybridInfo.verdictLabel || hybridInfo.reasoning || '';
+          const confidence = hybridInfo.confidence || 'mixed_signals';
+          const confLabel = confidence === 'high' ? 'High Confidence' : confidence === 'low' ? 'Low Confidence' : 'Mixed Signals';
+          const reasoning = hybridInfo.reasoning || hybridInfo.aiReasoning || '';
+          // Truncate reasoning to 3 sentences
+          const sentences = reasoning.match(/[^.!?]+[.!?]+/g) || [reasoning];
+          const shortReasoning = sentences.slice(0, 3).join(' ').trim();
+          const hasMore = sentences.length > 3;
           const absenceAnalysis = hybridInfo.absence_analysis || null;
-          const verbAssessment = hybridInfo.verb_quality_assessment || null;
+          const seniorityCheck = hybridInfo.seniority_check || null;
+          const domainGaps = hybridInfo.domain_gap_classification || null;
+          const strongMetrics = (hybridInfo.strong_metrics_count || 0) + (hybridInfo.medium_metrics_count || 0);
 
-          const OwnershipSignals = () => (
-            <div className="space-y-3 mt-3 pt-3 border-t border-border/50">
-              {/* Builder/Participant ratio bar */}
-              {builderRatio != null && (
-                <div>
-                  <p className="text-[11px] font-medium text-muted-foreground mb-1">Ownership Signal</p>
-                  <div className="flex h-3 rounded-full overflow-hidden bg-muted">
-                    <div className="bg-primary h-full transition-all" style={{ width: `${Math.round(builderRatio * 100)}%` }} />
-                    <div className="bg-muted-foreground/20 h-full flex-1" />
-                  </div>
-                  <div className="flex justify-between mt-0.5">
-                    <span className="text-[10px] text-primary font-medium">Builder {Math.round(builderRatio * 100)}%</span>
-                    <span className="text-[10px] text-muted-foreground">Participant {Math.round((1 - builderRatio) * 100)}%</span>
-                  </div>
-                  {builderRatio < 0.5 && (
-                    <p className="text-[10px] text-amber-600 mt-0.5 flex items-center gap-1">
-                      <AlertTriangle className="h-2.5 w-2.5" />Mostly participation language detected.
-                    </p>
-                  )}
-                  {verbAssessment && <p className="text-[10px] text-muted-foreground italic mt-0.5">{verbAssessment}</p>}
-                </div>
-              )}
+          const isPositive = hybridInfo.verdict === 'recommend' || candidate.interview_worthy;
+          const isFlag = hybridInfo.verdict === 'flag' || confidence === 'mixed_signals' || confidence === 'low';
 
-              {/* Metrics count badge */}
-              {metricsCount != null && (
-                <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className={`text-[10px] ${metricsCount >= 3 ? 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300' : metricsCount >= 1 ? 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300' : 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300'}`}>
-                    <BarChart3 className="h-3 w-3 mr-1" />{metricsCount} measurable impact{metricsCount !== 1 ? 's' : ''} found
-                  </Badge>
-                </div>
-              )}
-
-              {/* Absence analysis (collapsible) */}
-              {absenceAnalysis && (
-                <AbsenceAnalysisSection analysis={absenceAnalysis} />
-              )}
-            </div>
-          );
+          const borderClass = isPositive ? 'border-green-400 border-2' : isFlag ? 'border-amber-400 border-2' : 'border-destructive border-2';
+          const iconColor = isPositive ? 'text-green-600' : isFlag ? 'text-amber-600' : 'text-destructive';
+          const Icon = isPositive ? CheckCircle : isFlag ? AlertTriangle : XCircle;
+          const titleColor = isPositive ? 'text-green-700' : isFlag ? 'text-amber-700' : 'text-destructive';
 
           return (
-          <Card className={
-            hybridInfo.confidence === 'flagged'
-              ? 'border-amber-400 border-2'
-              : hybridInfo.method === 'both_agree_worthy'
-                ? 'border-green-400 border-2'
-                : hybridInfo.method === 'both_agree_not_worthy'
-                  ? 'border-destructive border-2'
-                  : ''
-          }>
-            <CardContent className="p-5 space-y-4">
-              {/* BOTH AGREE WORTHY */}
-              {hybridInfo.method === 'both_agree_worthy' && (
-                <>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5 text-green-600" />
-                    <div>
-                      <h3 className="text-base font-bold text-green-700">✓ Interview Recommended — {hybridInfo.confidence === 'high' ? 'High' : 'Medium'} Confidence</h3>
-                      <p className="text-xs text-muted-foreground">Both algorithmic and AI assessment agree.</p>
+            <Card className={borderClass}>
+              <CardContent className="p-5 space-y-3">
+                {/* Verdict + Confidence */}
+                <div className="flex items-start gap-2">
+                  <Icon className={`h-5 w-5 ${iconColor} mt-0.5 shrink-0`} />
+                  <div>
+                    <h3 className={`text-base font-bold ${titleColor}`}>{verdictLabel}</h3>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <Badge variant="outline" className="text-[10px]">{confLabel}</Badge>
+                      {seniorityCheck && seniorityCheck !== 'not_applicable' && (
+                        <Badge variant="outline" className={`text-[10px] ${seniorityCheck === 'validated' ? 'border-green-300 text-green-700' : seniorityCheck === 'mismatch' ? 'border-destructive text-destructive' : 'border-amber-300 text-amber-700'}`}>
+                          Seniority: {seniorityCheck === 'validated' ? 'Validated' : seniorityCheck === 'mismatch' ? 'Mismatch' : 'Insufficient Evidence'}
+                        </Badge>
+                      )}
+                      {domainGaps && domainGaps !== 'mixed' && (
+                        <Badge variant="outline" className={`text-[10px] ${domainGaps === 'trainable' ? 'border-blue-300 text-blue-700' : 'border-destructive text-destructive'}`}>
+                          Domain gaps: {domainGaps === 'trainable' ? 'Trainable' : 'Critical'}
+                        </Badge>
+                      )}
+                      {strongMetrics > 0 && (
+                        <Badge variant="secondary" className="text-[10px]">
+                          <BarChart3 className="h-2.5 w-2.5 mr-1" />{strongMetrics} measurable impact{strongMetrics !== 1 ? 's' : ''}
+                        </Badge>
+                      )}
                     </div>
                   </div>
-                  {hybridInfo.aiReasoning && (
-                    <p className="text-sm text-foreground/80">{hybridInfo.aiReasoning}</p>
-                  )}
-                  {hybridInfo.recruiterNote && (
-                    <p className="text-sm italic text-muted-foreground border-l-2 border-muted-foreground/30 pl-3">"{hybridInfo.recruiterNote}"</p>
-                  )}
-                  {hybridInfo.keyStrengths?.length > 0 && (
-                    <ul className="space-y-1">
-                      {hybridInfo.keyStrengths.map((s: string, i: number) => (
-                        <li key={i} className="text-xs text-green-700 flex items-start gap-1.5">
-                          <CheckCircle className="h-3 w-3 mt-0.5 shrink-0" />{s}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  {hybridInfo.recommendedPreset && (
-                    <Badge variant="secondary" className="text-[10px]">Recommended: {hybridInfo.recommendedPreset.replace(/_/g, ' ')}</Badge>
-                  )}
-                  <OwnershipSignals />
-                </>
-              )}
-
-              {/* BOTH AGREE NOT WORTHY */}
-              {hybridInfo.method === 'both_agree_not_worthy' && (
-                <>
-                  <div className="flex items-center gap-2">
-                    <XCircle className="h-5 w-5 text-destructive" />
-                    <div>
-                      <h3 className="text-base font-bold text-destructive">✗ Below Threshold — High Confidence</h3>
-                      <p className="text-xs text-muted-foreground">Both algorithmic and AI assessment agree.</p>
-                    </div>
-                  </div>
-                  {hybridInfo.aiReasoning && (
-                    <p className="text-sm text-foreground/80">{hybridInfo.aiReasoning}</p>
-                  )}
-                  {hybridInfo.recruiterNote && (
-                    <p className="text-sm italic text-muted-foreground border-l-2 border-muted-foreground/30 pl-3">"{hybridInfo.recruiterNote}"</p>
-                  )}
-                  {hybridInfo.concerns?.length > 0 && (
-                    <ul className="space-y-1">
-                      {hybridInfo.concerns.map((c: string, i: number) => (
-                        <li key={i} className="text-xs text-destructive flex items-start gap-1.5">
-                          <XCircle className="h-3 w-3 mt-0.5 shrink-0" />{c}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  {hybridInfo.keyStrengths?.length > 0 && (
-                    <div>
-                      <p className="text-[11px] text-muted-foreground italic mb-1">Strengths noted but insufficient for this role:</p>
-                      <ul className="space-y-1">
-                        {hybridInfo.keyStrengths.map((s: string, i: number) => (
-                          <li key={i} className="text-xs text-muted-foreground flex items-start gap-1.5">
-                            <Star className="h-3 w-3 mt-0.5 shrink-0" />{s}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  <OwnershipSignals />
-                </>
-              )}
-
-              {/* FLAGGED — CONFLICTING */}
-              {hybridInfo.confidence === 'flagged' && (
-                <>
-                  <div className="flex items-center gap-2">
-                    <AlertTriangle className="h-5 w-5 text-amber-600" />
-                    <div>
-                      <h3 className="text-base font-bold text-amber-700">⚠ Conflicting Assessment — Manager Review Required</h3>
-                    </div>
-                  </div>
-                  <div className="text-sm text-foreground/80">
-                    {hybridInfo.method === 'flagged_ai_overrides' ? (
-                      <p><strong>Algorithm:</strong> Below threshold due to skill name mismatch. <strong>AI Assessment:</strong> Strong domain expertise detected. The AI recommends proceeding.</p>
-                    ) : (
-                      <p><strong>Algorithm:</strong> Sufficient skill coverage. <strong>AI Assessment:</strong> Has concerns about depth or fit.</p>
-                    )}
-                  </div>
-                  {hybridInfo.aiReasoning && (
-                    <div className="border-l-4 border-primary/40 pl-3 py-1 bg-primary/5 rounded-r-md">
-                      <p className="text-sm text-foreground/80 italic">{hybridInfo.aiReasoning}</p>
-                    </div>
-                  )}
-                  {hybridInfo.recruiterNote && (
-                    <p className="text-sm italic text-muted-foreground border-l-2 border-muted-foreground/30 pl-3">"{hybridInfo.recruiterNote}"</p>
-                  )}
-                  {hybridInfo.concerns?.length > 0 && (
-                    <ul className="space-y-1">
-                      {hybridInfo.concerns.map((c: string, i: number) => (
-                        <li key={i} className="text-xs text-amber-700 flex items-start gap-1.5">
-                          <AlertTriangle className="h-3 w-3 mt-0.5 shrink-0" />{c}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  {hybridInfo.keyStrengths?.length > 0 && (
-                    <ul className="space-y-1">
-                      {hybridInfo.keyStrengths.map((s: string, i: number) => (
-                        <li key={i} className="text-xs text-green-700 flex items-start gap-1.5">
-                          <CheckCircle className="h-3 w-3 mt-0.5 shrink-0" />{s}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  <OwnershipSignals />
-                </>
-              )}
-            </CardContent>
-          </Card>
-          );
-        })()}
-
-        {/* Section 1 — Candidate Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Candidate Details</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <InfoRow label="Full Name" value={candidate.name} />
-              <InfoRow label="Email" value={
-                (candidate as any).candidate_email ? (
-                  <a href={`mailto:${(candidate as any).candidate_email}`} className="text-primary hover:underline flex items-center gap-1">
-                    <Mail className="h-3 w-3" />{(candidate as any).candidate_email}
-                  </a>
-                ) : candidate.email || "—"
-              } />
-              <InfoRow label="Role Applied For" value={role?.title || "—"} />
-              <InfoRow label="Submitted At" value={
-                (candidate as any).submitted_at
-                  ? new Date((candidate as any).submitted_at).toLocaleString()
-                  : candidate.created_at ? new Date(candidate.created_at).toLocaleString() : "—"
-              } />
-              <InfoRow label="Submission Source" value={(candidate as any).submission_source?.replace(/_/g, " ") || "—"} />
-              <InfoRow label="Manager Decision" value={
-                <span className={`capitalize ${(candidate as any).manager_decision === "approved" ? "text-green-600" : (candidate as any).manager_decision === "rejected" ? "text-destructive" : "text-muted-foreground"}`}>
-                  {(candidate as any).manager_decision || "pending"}
-                </span>
-              } />
-              <InfoRow label="Access Code" value={
-                candidate.access_code ? (
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono">{codeRevealed ? candidate.access_code : candidate.access_code.slice(0, 3) + "***"}</span>
-                    <button onClick={() => setCodeRevealed(!codeRevealed)} className="text-muted-foreground hover:text-foreground">
-                      {codeRevealed ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-                    </button>
-                  </div>
-                ) : "—"
-              } />
-              <InfoRow label="Code Expires" value={
-                candidate.code_expires_at ? new Date(candidate.code_expires_at).toLocaleString() : "—"
-              } />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Candidate Message */}
-        {(candidate as any).candidate_message && (
-          <Card>
-            <CardContent className="p-5">
-              <div className="flex items-start gap-3">
-                <Quote className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">Candidate's Message</p>
-                  <p className="text-sm text-foreground/80 italic">"{(candidate as any).candidate_message}"</p>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
-        {/* Section 2 — CV Content */}
-        {(candidate as any).interview_notes && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <FileText className="h-4 w-4" />Submitted CV
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="bg-secondary rounded-lg p-4 max-h-80 overflow-y-auto">
-                <pre className="text-xs font-mono whitespace-pre-wrap text-foreground/80">
-                  {(candidate as any).interview_notes}
-                </pre>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Section 3 — AI-Extracted Skills */}
-        {Object.keys(interviewSkills).length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Sparkles className="h-4 w-4" />AI-Extracted Skills
-              </CardTitle>
-              <p className="text-[11px] text-muted-foreground">Extracted by CV Agent — requires interview verification</p>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {Object.entries(interviewSkills).map(([skill, data]: [string, any]) => (
-                  <div key={skill} className="rounded-lg border border-border p-2 text-xs">
-                    <span className="font-medium">{skill.replace(/([A-Z])/g, " $1").trim()}</span>
-                    {typeof data === "object" && data?.proficiency != null && (
-                      <Badge variant="secondary" className="ml-2 text-[9px]">
-                        {data.proficiency}/3
-                      </Badge>
-                    )}
-                  </div>
-                ))}
-              </div>
-              <div className="mt-3 p-2 rounded-md bg-status-amber-light border border-status-amber/20 text-xs text-status-amber flex items-center gap-2">
-                <AlertTriangle className="h-3 w-3 shrink-0" />
-                CV data is claimed, not verified. Skills marked ⚠ should be confirmed in the interview.
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Section 4 — Worthiness Assessment */}
-        <Card className={`border-l-4 ${candidate.interview_worthy ? "border-l-green-500" : "border-l-destructive"}`}>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <Shield className="h-4 w-4" />AI Screening Decision
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {candidate.interview_worthy ? (
-              <div className="space-y-3">
-                <p className="text-lg font-bold text-green-600 dark:text-green-400">✓ Interview Recommended</p>
-                {candidate.worthy_score != null && (
-                  <p className="text-sm text-muted-foreground">Score: <span className="font-mono font-semibold">{Math.round(candidate.worthy_score * 100)}%</span></p>
+                {/* 3-sentence reasoning */}
+                <p className="text-sm text-foreground/80">{shortReasoning}</p>
+                {hasMore && (
+                  <ExpandableSection label="See full analysis">
+                    <p className="text-sm text-foreground/80">{sentences.slice(3).join(' ').trim()}</p>
+                  </ExpandableSection>
                 )}
-                {candidate.worthy_reasoning && <p className="text-sm text-foreground/80">{candidate.worthy_reasoning}</p>}
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <p className="text-lg font-bold text-destructive">✗ Below Threshold</p>
-                {(candidate.not_worthy_reasons as any[])?.length > 0 && (
+
+                {/* Key strengths (max 3) */}
+                {hybridInfo.keyStrengths?.length > 0 && (
                   <ul className="space-y-1">
-                    {(candidate.not_worthy_reasons as any[]).map((r: any, i: number) => (
-                      <li key={i} className="text-sm text-destructive/80 flex items-start gap-2">
-                        <span className="mt-1">•</span>
-                        <span>{typeof r === "string" ? r : r.reason || JSON.stringify(r)}</span>
+                    {hybridInfo.keyStrengths.slice(0, 3).map((s: string, i: number) => (
+                      <li key={i} className="text-xs text-green-700 flex items-start gap-1.5">
+                        <CheckCircle className="h-3 w-3 mt-0.5 shrink-0" />{s}
                       </li>
                     ))}
                   </ul>
                 )}
-                <p className="text-xs text-muted-foreground italic">These gaps are too large to bridge in a reasonable timeframe for this role.</p>
-                {!candidate.access_code && (
-                  <Button variant="outline" size="sm" className="text-xs text-muted-foreground" onClick={() => {
-                    if (confirm("Override AI screening and send interview code anyway?")) handleApprove();
-                  }}>
-                    Override — Send Interview Code Anyway
-                  </Button>
+
+                {/* Key gaps (max 3) */}
+                {hybridInfo.concerns?.length > 0 && (
+                  <ul className="space-y-1">
+                    {hybridInfo.concerns.slice(0, 3).map((c: string, i: number) => (
+                      <li key={i} className="text-xs text-amber-700 flex items-start gap-1.5">
+                        <AlertTriangle className="h-3 w-3 mt-0.5 shrink-0" />{c}
+                      </li>
+                    ))}
+                  </ul>
                 )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+
+                {/* Evidence Analysis (collapsible) */}
+                {absenceAnalysis && (
+                  <AbsenceAnalysisSection analysis={absenceAnalysis} />
+                )}
+              </CardContent>
+            </Card>
+          );
+        })()}
 
         {/* Section 5 — Interview & Assessment (after completion) */}
         {isCompleted && score != null && (
