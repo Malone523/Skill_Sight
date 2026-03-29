@@ -1,7 +1,9 @@
 import { supabase } from "@/integrations/supabase/client";
 import { runFullAnalysis, detectRoleType } from "@/lib/algorithms";
-import { skillsToVector, skillsToWeights } from "@/lib/utils";
+import { skillsToVector, skillsToWeights, parseRequiredSkills } from "@/lib/utils";
 import { hybridWorthinessDecision } from "@/lib/verdictEngine";
+import { computeCvSkillVector } from "@/lib/cvCoverageScore";
+import { mapInterviewSkillsToRoleKeys } from "@/lib/interviewSkillMapping";
 
 interface SeedCandidate {
   name: string;
