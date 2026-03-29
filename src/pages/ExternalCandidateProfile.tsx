@@ -297,7 +297,7 @@ export default function ExternalCandidateProfile() {
   };
 
   const handleSubmitInsights = async () => {
-    const hasContent = Object.values(managerInsights).some(v => v.trim());
+    const hasContent = managerInsights.strengths.trim() || managerInsights.concerns.trim();
     if (!hasContent) {
       toast.error("Please fill in at least one insight field");
       return;
