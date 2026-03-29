@@ -184,7 +184,13 @@ export default function InterviewExternal() {
 
       // Merge CV skills + interview-demonstrated skills using role display names
       const empSkills: SkillVector = {};
-      // Map interview-extracted skills to role display names
+      // First: CV-based skill matching
+      const cvText = candidate.candidateMessage || "";
+      const cvSkills = computeCvSkillVector(cvText, candidate.requiredSkills);
+      Object.entries(cvSkills).forEach(([k, v]) => {
+        empSkills[k] = Math.max(empSkills[k] || 0, v);
+      });
+      // Then: interview-extracted skills mapped to role display names
       const mappedInterviewSkills = mapInterviewSkillsToRoleKeys(extractedSkills, roleSkillNames);
       Object.entries(mappedInterviewSkills).forEach(([k, v]) => {
         empSkills[k] = Math.max(empSkills[k] || 0, v);
