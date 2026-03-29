@@ -11,14 +11,14 @@ import { ArrowLeft, Clock, Shield, CheckCircle, FileText, Loader2, AlertTriangle
 import { useQuery } from "@tanstack/react-query";
 import { runFullAnalysis, detectRoleType } from "@/lib/algorithms";
 
-function useOpenRoles() {
+function useAllRoles() {
   return useQuery({
-    queryKey: ["open_roles_public"],
+    queryKey: ["all_roles_public"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("roles")
         .select("*")
-        .eq("hiring_status", "actively_hiring");
+        .order("hiring_status");
       if (error) throw error;
       return data;
     },
