@@ -346,9 +346,10 @@ export default function ExternalCandidateProfile() {
           const titleColor = isPositive ? 'text-green-700' : isFlag ? 'text-amber-700' : 'text-destructive';
           const agreementLabel = confidence === 'high' ? 'Both algorithmic and AI assessment agree.' : confidence === 'low' ? 'Assessment signals are weak or insufficient.' : 'Algorithmic and AI assessments show mixed signals.';
 
-          const builderPct = ownershipSignal?.builder_pct ?? ownershipSignal?.builder ?? null;
-          const participantPct = ownershipSignal?.participant_pct ?? ownershipSignal?.participant ?? null;
-          const ownershipNote = ownershipSignal?.note || ownershipSignal?.description || '';
+          // Derive ownership percentages from either object or decimal ratio
+          const builderPct = ownershipRaw?.builder_pct ?? ownershipRaw?.builder ?? (builderVerbRatio != null ? Math.round(builderVerbRatio * 100) : null);
+          const participantPct = ownershipRaw?.participant_pct ?? ownershipRaw?.participant ?? (builderVerbRatio != null ? Math.round((1 - builderVerbRatio) * 100) : null);
+          const ownershipNote = ownershipRaw?.note || ownershipRaw?.description || (builderVerbRatio != null ? hybridInfo.verb_quality_assessment || '' : '');
 
           return (
             <>
