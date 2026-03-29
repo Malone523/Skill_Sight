@@ -272,6 +272,15 @@ export default function ManagerInterview() {
 
         {phase === "interviewing" && (
           <>
+            <div className="card-skillsight p-3 flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-bold shrink-0">
+                {managerName.split(" ").map(n => n[0]).join("").slice(0, 2)}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold truncate">{managerName}</p>
+                <p className="text-[10px] text-muted-foreground truncate">{managerTitle}</p>
+              </div>
+            </div>
             <div className="card-skillsight p-3">
              <p className="text-[13px] font-semibold">Question {Math.min(questionsAsked, MAX_QUESTIONS)} / {MAX_QUESTIONS}</p>
               <div className="h-1 rounded-full bg-secondary mt-2 overflow-hidden">
