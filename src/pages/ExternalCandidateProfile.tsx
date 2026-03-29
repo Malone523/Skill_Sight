@@ -98,6 +98,14 @@ export default function ExternalCandidateProfile() {
   const [deleting, setDeleting] = useState(false);
   const [cvModalOpen, setCvModalOpen] = useState(false);
   const [promoting, setPromoting] = useState(false);
+  const [insightsOpen, setInsightsOpen] = useState(false);
+  const [managerInsights, setManagerInsights] = useState({
+    culturalFit: "",
+    communicationStyle: "",
+    leadershipPotential: "",
+    technicalDepth: "",
+    concernsOrRisks: "",
+  });
 
   const { data: candidate, isLoading, refetch } = useQuery({
     queryKey: ["external_candidate_detail", id],
