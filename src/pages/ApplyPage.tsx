@@ -273,7 +273,7 @@ export default function ApplyPage() {
     try {
       // Phase 1: Parse CV
       setPhase("parsing");
-      const roleType = detectRoleType(selectedRole.required_skills || {}, selectedRole.strategic_weights || {});
+      const roleType = detectRoleType((selectedRole.required_skills || {}) as Record<string, number>, (selectedRole.strategic_weights || {}) as Record<string, number>);
 
       const parseResponse = await supabase.functions.invoke("parse-cv", {
         body: {
