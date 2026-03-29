@@ -105,37 +105,54 @@ export default function ExecutiveDashboard() {
   }, [roles, results, employees, externalCandidates, interviews]);
 
   const radarData = useMemo(() => {
-    const strategicSkills = [
-      { key: 'Thermal Engineering', label: 'Thermal Engineering' },
-      { key: 'Python', label: 'Python' },
-      { key: 'Machine Learning', label: 'Machine Learning' },
-      { key: 'EV Battery Systems', label: 'EV Battery Systems' },
-      { key: 'AUTOSAR', label: 'AUTOSAR' },
-      { key: 'Project Management', label: 'Project Management' },
-      { key: 'Deep Learning', label: 'Deep Learning' },
-      { key: 'Manufacturing Processes', label: 'Manufacturing Processes' },
+    const skillFamilies = [
+      { label: "Python", aliases: ["Python"] },
+      { label: "Machine Learning", aliases: ["Machine Learning", "Machine Learning / Deep Learning"] },
+      { label: "Deep Learning", aliases: ["Deep Learning", "Machine Learning / Deep Learning"] },
+      { label: "Thermal Engineering", aliases: ["Thermal Engineering", "Thermal Management"] },
+      { label: "EV Battery Systems", aliases: ["EV Battery Systems", "Battery Systems Engineering", "Battery Management Systems (BMS)"] },
+      { label: "AUTOSAR", aliases: ["AUTOSAR"] },
+      { label: "Project Management", aliases: ["Project Management", "Project Leadership", "Program / Portfolio Management", "Agile / SAFe Project Management", "Agile / Scaled Agile", "IT Programme Delivery"] },
+      { label: "Manufacturing Processes", aliases: ["Manufacturing Processes", "Manufacturing Process Knowledge", "Battery Cell Production", "Lean Manufacturing"] },
     ];
+
     if (!allSkills?.length || !roles?.length) return [];
-    return strategicSkills.map(({ key, label }) => {
-      // Match employee skills by display name (case-insensitive)
-      const keyLower = key.toLowerCase();
-      const skillEntries = allSkills.filter(s => s.skill_name.toLowerCase() === keyLower);
-      const avgProf = skillEntries.length ? skillEntries.reduce((s, e) => s + (e.proficiency || 0), 0) / skillEntries.length : 0;
-      // required_skills is an array of {name, required_level, weight}
-      const maxRequired = Math.max(0, ...roles.map(r => {
-        const req = r.required_skills as any;
-        if (!req) return 0;
-        if (Array.isArray(req)) {
-          const match = req.find((s: any) => s.name?.toLowerCase().includes(keyLower) || keyLower.includes(s.name?.toLowerCase()));
-          return match ? (match.required_level || 0) : 0;
-        }
-        // Fallback: plain object
-        if (req[key] != null) return req[key];
-        const found = Object.keys(req).find(k => k.toLowerCase() === keyLower);
-        return found ? req[found] : 0;
-      }));
-      return { skill: label, workforce: Math.round(avgProf * 33.3), strategic: Math.round(maxRequired * 33.3) };
-    });
+
+    const normalize = (value: string) => value.trim().toLowerCase();
+    const matchesAlias = (value: string | null | undefined, aliases: string[]) => {
+      if (!value) return false;
+      const normalizedValue = normalize(value);
+      return aliases.some((alias) => {
+        const normalizedAlias = normalize(alias);
+        return normalizedValue === normalizedAlias || normalizedValue.includes(normalizedAlias) || normalizedAlias.includes(normalizedValue);
+      });
+    };
+
+    return skillFamilies
+      .map(({ label, aliases }) => {
+        const workforceEntries = allSkills.filter((skill) => matchesAlias(skill.skill_name, aliases));
+        const avgProf = workforceEntries.length
+          ? workforceEntries.reduce((sum, entry) => sum + (Number(entry.proficiency) || 0), 0) / workforceEntries.length
+          : 0;
+
+        const maxRequired = Math.max(
+          0,
+          ...roles.map((role) => {
+            const requirements = Array.isArray(role.required_skills) ? role.required_skills as any[] : [];
+            const matchingRequirements = requirements.filter((requirement) => matchesAlias(requirement?.name, aliases));
+            if (!matchingRequirements.length) return 0;
+            return Math.max(...matchingRequirements.map((requirement) => Number(requirement?.required_level) || 0));
+          })
+        );
+
+        return {
+          skill: label,
+          workforce: Math.round(avgProf * 33.3),
+          strategic: Math.round(maxRequired * 33.3),
+        };
+      })
+      .filter((item) => item.workforce > 0 || item.strategic > 0)
+      .sort((a, b) => b.strategic - a.strategic || b.workforce - a.workforce);
   }, [allSkills, roles]);
 
   if (loadingEmp) {
