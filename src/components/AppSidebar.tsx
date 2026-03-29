@@ -6,6 +6,7 @@ import {
   Briefcase,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
+import bmwLogo from "@/assets/bmw_logo.svg";
 import { useLocation } from "react-router-dom";
 import {
   Sidebar,
