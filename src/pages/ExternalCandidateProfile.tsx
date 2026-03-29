@@ -374,7 +374,7 @@ export default function ExternalCandidateProfile() {
                     <Icon className={`h-5 w-5 ${iconColor} mt-0.5 shrink-0`} />
                     <div>
                       <h3 className={`text-base font-bold ${titleColor}`}>
-                        {isPositive ? '✓' : isFlag ? '⚠' : '✕'} {verdictLabel} — {confLabel}
+                        {isHardReject ? verdictLabel : `${isPositive ? '✓' : isFlag ? '⚠' : '✕'} ${verdictLabel} — ${confLabel}`}
                       </h3>
                       <p className="text-xs text-muted-foreground mt-0.5">{agreementLabel}</p>
                       <div className="flex items-center gap-2 mt-1.5 flex-wrap">
