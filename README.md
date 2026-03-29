@@ -35,7 +35,7 @@ Because of this, the organisation ends up using a large amount of money, people 
 ## Live Demo
 
 **URL:** https://projectskillsight.online  
-
+**Explanation:** https://youtu.be/ytlJTGKahCQ  
 Manager login:  
 **Login:** manager@bmw-skillsight.com  
 **Password:** SkillSight2026!
