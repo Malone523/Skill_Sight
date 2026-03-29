@@ -655,17 +655,45 @@ export default function ExternalCandidateProfile() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {gapAnalysis.surplusSkills?.length > 0 ? (
-                      <div className="flex flex-wrap gap-2">
-                        {gapAnalysis.surplusSkills.map((s: any, i: number) => (
-                          <Badge key={i} className="bg-status-green-light text-status-green border-status-green/20">
-                            {formatSkillName(s.skill)} +{s.surplus}
-                          </Badge>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">No surplus skills identified</p>
-                    )}
+                    {(() => {
+                      const algorithmicSurplus = gapAnalysis.surplusSkills || [];
+                      // Auto-detect surplus signals from experience profile / hybrid data
+                      const autoSignals: string[] = [];
+                      const expProfile = results.parsed?.experience_profile || hybridInfo || {};
+                      const educationLevel = expProfile.education_level || results.parsed?.education_level;
+                      const publications = expProfile.publications || results.parsed?.publications || [];
+                      const totalYears = expProfile.total_years || expProfile.total_years_experience || 0;
+                      const skills = results.parsed?.skills || [];
+                      const hasHighDepthSkills = skills.some((s: any) => s.depth === "HIGH");
+
+                      if (educationLevel === "phd") autoSignals.push("Doctoral-level domain expertise");
+                      if (publications.length >= 2) autoSignals.push("Published research in domain");
+                      // Check for patents in CV text
+                      const cvText = ((candidate as any).candidate_message || "").toLowerCase();
+                      if (cvText.includes("patent") || cvText.match(/\d+\s*patents?/i)) autoSignals.push("Patented innovations in domain");
+                      // TÜV or equivalent certification
+                      if (cvText.includes("tüv") || cvText.includes("tuev") || cvText.includes("tüv") || skills.some((s: any) => s.name?.toLowerCase().includes("tüv"))) autoSignals.push("Professional safety certification");
+                      if (totalYears >= 10) autoSignals.push("Decade-plus domain experience");
+
+                      const hasSurplus = algorithmicSurplus.length > 0 || autoSignals.length > 0;
+
+                      return hasSurplus ? (
+                        <div className="flex flex-wrap gap-2">
+                          {algorithmicSurplus.map((s: any, i: number) => (
+                            <Badge key={`alg-${i}`} className="bg-status-green-light text-status-green border-status-green/20">
+                              {formatSkillName(s.skill)} +{s.surplus}
+                            </Badge>
+                          ))}
+                          {autoSignals.map((signal, i) => (
+                            <Badge key={`auto-${i}`} className="bg-status-green-light text-status-green border-status-green/20">
+                              ★ {signal}
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">No surplus skills identified</p>
+                      );
+                    })()}
                   </CardContent>
                 </Card>
               </div>
