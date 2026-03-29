@@ -382,73 +382,29 @@ export default function ApplyPage() {
     }
   };
 
-  // Success screens
-  if (phase === "done_worthy") {
+  // Success screen — same for all outcomes
+  if (phase === "done_worthy" || phase === "done_flagged" || phase === "done_not_worthy") {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-6">
         <div className="max-w-md text-center space-y-5">
-          <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto">
-            <CheckCircle className="w-8 h-8 text-green-600" />
+          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+            <CheckCircle className="w-8 h-8 text-primary" />
           </div>
-          <h1 className="text-2xl font-bold">Your application has been received</h1>
+          <h1 className="text-2xl font-bold">Your Application Has Been Received</h1>
           <p className="text-sm text-muted-foreground">
-            Your profile shows strong alignment with the <strong>{roleName}</strong> position. The BMW hiring team has been notified and will review your assessment. If selected for the next step, you will receive an interview access code at <strong>{email}</strong> within 48 hours.
+            Thank you for applying to the <strong>{roleName}</strong> position at BMW Group. Our hiring team will review your profile and get back to you at <strong>{email}</strong> within 48 hours.
           </p>
           <Card>
             <CardContent className="p-4 text-left space-y-2">
               <p className="text-xs font-semibold text-muted-foreground">What happens next:</p>
               <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
-                <li>Hiring team reviews your AI assessment</li>
-                <li>You receive an access code by email</li>
+                <li>The hiring team reviews your profile</li>
+                <li>If selected, you'll receive an interview access code by email</li>
                 <li>Complete a 15-minute skills interview</li>
               </ol>
             </CardContent>
           </Card>
           <Button variant="outline" onClick={() => window.location.reload()}>Return to Portal</Button>
-        </div>
-      </div>
-    );
-  }
-
-  if (phase === "done_flagged") {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-6">
-        <div className="max-w-md text-center space-y-5">
-          <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mx-auto">
-            <AlertTriangle className="w-8 h-8 text-amber-600" />
-          </div>
-          <h1 className="text-2xl font-bold">Your application has been received</h1>
-          <p className="text-sm text-muted-foreground">
-            Your profile for the <strong>{roleName}</strong> position has been flagged for priority review by the hiring team. They will evaluate your application and respond within 48 hours at <strong>{email}</strong>.
-          </p>
-          <Card>
-            <CardContent className="p-4 text-left space-y-2">
-              <p className="text-xs font-semibold text-muted-foreground">What happens next:</p>
-              <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
-                <li>A hiring manager personally reviews your profile</li>
-                <li>You may receive an access code by email</li>
-                <li>Complete a 15-minute skills interview if approved</li>
-              </ol>
-            </CardContent>
-          </Card>
-          <Button variant="outline" onClick={() => window.location.reload()}>Return to Portal</Button>
-        </div>
-      </div>
-    );
-  }
-
-  if (phase === "done_not_worthy") {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-6">
-        <div className="max-w-md text-center space-y-5">
-          <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto">
-            <FileText className="w-8 h-8 text-muted-foreground" />
-          </div>
-          <h1 className="text-2xl font-bold">Thank you for your application</h1>
-          <p className="text-sm text-muted-foreground">
-            We've reviewed your profile against the current requirements for the <strong>{roleName}</strong> position. At this time, your background doesn't meet the minimum criteria for this specific role. We encourage you to check back as new roles open.
-          </p>
-          <Button variant="outline" onClick={() => window.location.reload()}>View Other Roles</Button>
         </div>
       </div>
     );
