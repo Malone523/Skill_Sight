@@ -2,13 +2,16 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEmployee, useInterviews, useRoles } from "@/hooks/useData";
+import { useInvitations } from "@/hooks/useInvitations";
+import { PRESET_PACKS } from "@/lib/presetPacks";
+import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { runFullAnalysis, detectRoleType, computeThreeLayerScore, getAHPWeightsForRole, type AlgorithmInput, type SkillVector, type RoleType } from "@/lib/algorithms";
 import { skillsToVector, skillsToWeights } from "@/lib/utils";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, MessageSquare, Check, Sparkles, Brain, BarChart3, FileText, Cpu, Target, Shield, Zap, Clock, ChevronLeft } from "lucide-react";
+import { ArrowRight, MessageSquare, Check, Sparkles, Brain, BarChart3, FileText, Cpu, Target, Shield, Zap, Clock, ChevronLeft, Mail } from "lucide-react";
 
 interface Message {
   role: "ai" | "user";
@@ -35,6 +38,20 @@ export default function MyInterview() {
   const { data: employee, isLoading: empLoading } = useEmployee(employeeId || undefined);
   const { data: interviews, isLoading: intLoading } = useInterviews(employeeId || undefined);
   const { data: roles } = useRoles();
+  const { data: invitations, refetch: refetchInvitations } = useInvitations(employeeId || undefined);
+
+  const pendingInvite = invitations?.find((i: any) => i.status === "pending" && new Date(i.expires_at) > new Date());
+  const pack = pendingInvite?.preset_pack ? PRESET_PACKS.find(p => p.id === pendingInvite.preset_pack) : null;
+  const daysUntilExpiry = pendingInvite ? Math.ceil((new Date(pendingInvite.expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : 0;
+
+  const handleAcceptFromInterview = async () => {
+    if (!pendingInvite) return;
+    await supabase.from("interview_invitations" as any).update({ status: "accepted", accepted_at: new Date().toISOString() } as any).eq("id", pendingInvite.id);
+    await supabase.from("interviews").update({ status: "in_progress" }).eq("id", pendingInvite.interview_id);
+    refetchInvitations();
+    toast({ title: "Interview accepted!", description: "Your career discovery interview is now active." });
+    window.location.reload();
+  };
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversationHistory, setConversationHistory] = useState<{role: string, content: string}[]>([]);
@@ -536,19 +553,62 @@ export default function MyInterview() {
   }
 
   if (!activeInterview) {
+    const inviteRole = pendingInvite ? roles?.find(r => r.id === pendingInvite.target_role_id) : null;
     return (
       <div className="flex items-center justify-center h-[calc(100vh-48px)]">
         <div className="max-w-lg w-full space-y-6 p-6">
-          <Card>
-            <CardContent className="p-8 text-center">
-              <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h2 className="text-lg font-bold mb-2">No Active Interview</h2>
-              <p className="text-sm text-muted-foreground">
-                Your manager will invite you to complete your career discovery interview.
-                You'll receive access here when it's ready.
-              </p>
-            </CardContent>
-          </Card>
+          {pendingInvite ? (
+            <Card className="border-primary/30 bg-primary/5">
+              <CardContent className="p-8">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Mail className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold">Interview Invitation</h2>
+                    <p className="text-xs text-muted-foreground">From {pendingInvite.invited_by_manager}</p>
+                  </div>
+                </div>
+                <div className="space-y-3 mb-5">
+                  {inviteRole && (
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Target Role</span>
+                      <span className="font-medium">{inviteRole.title}</span>
+                    </div>
+                  )}
+                  {pack && (
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Focus Area</span>
+                      <span className="font-medium">{pack.name}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Expires in</span>
+                    <span className="font-medium">{daysUntilExpiry} day{daysUntilExpiry !== 1 ? 's' : ''}</span>
+                  </div>
+                  {pendingInvite.message && (
+                    <div className="mt-2 p-3 rounded-lg bg-background border text-sm italic text-muted-foreground">
+                      "{pendingInvite.message}"
+                    </div>
+                  )}
+                </div>
+                <Button className="w-full" size="lg" onClick={handleAcceptFromInterview}>
+                  <Sparkles className="h-4 w-4 mr-2" /> Accept & Start Interview
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h2 className="text-lg font-bold mb-2">No Active Interview</h2>
+                <p className="text-sm text-muted-foreground">
+                  Your manager will invite you to complete your career discovery interview.
+                  You'll receive access here when it's ready.
+                </p>
+              </CardContent>
+            </Card>
+          )}
 
           {completedInterviews.length > 0 && (
             <div>
