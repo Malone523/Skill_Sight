@@ -438,7 +438,7 @@ export default function ExternalCandidateProfile() {
               </Button>
             )}
             {/* Interview Pass Toggle — only after AI interview completed with summary */}
-            {cvPassed && hybridInfo?.verdict !== 'hard_reject' && candidate.status !== "rejected" && candidate.status !== "below_threshold" && isCompleted && interview?.status === "completed" && (
+            {cvPassed && hybridInfo?.verdict !== 'hard_reject' && candidate.status !== "rejected" && candidate.status !== "below_threshold" && interview?.status === "completed" && (
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-border bg-muted/30">
                 <span className="text-xs text-muted-foreground">In-Person Interview Passed:</span>
                 <Switch
