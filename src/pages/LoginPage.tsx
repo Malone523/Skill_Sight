@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Briefcase, User, Eye, EyeOff, AlertCircle, Loader2 } from "lucide-react";
+import bmwLogo from "@/assets/bmw_logo.svg";
 
 type RoleTab = "manager" | "employee";
 
