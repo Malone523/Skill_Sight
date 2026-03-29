@@ -46,8 +46,8 @@ export default function AnalysisPage() {
     if (!employee || !targetRole || !skills) return null;
     const empSkills: SkillVector = {};
     skills.forEach(s => { empSkills[s.skill_name] = s.proficiency || 0; });
-    const reqSkills = (targetRole.required_skills || {}) as SkillVector;
-    const stratWeights = (targetRole.strategic_weights || {}) as SkillVector;
+    const reqSkills = skillsToVector(targetRole.required_skills);
+    const stratWeights = skillsToWeights(targetRole.required_skills);
     return {
       employee: {
         id: employee.id, name: employee.name, skills: empSkills,
@@ -59,7 +59,7 @@ export default function AnalysisPage() {
         id: targetRole.id, title: targetRole.title,
         requiredSkills: reqSkills, strategicWeights: stratWeights,
       },
-      allRoles: roles?.map(r => ({ requiredSkills: (r.required_skills || {}) as SkillVector })),
+      allRoles: roles?.map(r => ({ requiredSkills: skillsToVector(r.required_skills) })),
     };
   }, [employee, targetRole, skills, roles]);
 
