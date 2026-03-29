@@ -319,11 +319,11 @@ export default function RolesPage() {
                     <th className="text-center py-1 text-xs">Strategic Weight</th>
                   </tr></thead>
                   <tbody>
-                    {Object.entries((detailRole.required_skills || {}) as Record<string, number>).map(([skill, level]) => (
-                      <tr key={skill} className="border-b border-border/50">
-                        <td className="py-1.5">{skill.replace(/([A-Z])/g, ' $1').trim()}</td>
-                        <td className="text-center font-mono">{level}/3</td>
-                        <td className="text-center font-mono">{((detailRole.strategic_weights as Record<string, number>)?.[skill] || 0.5).toFixed(2)}</td>
+                    {parseRequiredSkills(detailRole.required_skills).map((s) => (
+                      <tr key={s.name} className="border-b border-border/50">
+                        <td className="py-1.5">{formatSkillName(s.name)}</td>
+                        <td className="text-center font-mono">{s.required_level}/3</td>
+                        <td className="text-center font-mono">{s.weight.toFixed(2)}</td>
                       </tr>
                     ))}
                   </tbody>
