@@ -21,6 +21,27 @@ import {
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 
+// Known acronyms to preserve during skill name formatting
+const KNOWN_ACRONYMS = new Set(["EV", "BMS", "ROS", "AUTOSAR", "ADAS", "SOC", "SOH", "ISO", "TÜV", "ML", "AI", "CV", "FEA", "CAD", "GPU", "CI", "CD", "AWS", "GCP"]);
+
+function formatSkillName(raw: string): string {
+  if (!raw) return raw;
+  // Insert space before uppercase letters that follow lowercase
+  let formatted = raw.replace(/([a-z])([A-Z])/g, "$1 $2");
+  // Also split on underscores
+  formatted = formatted.replace(/_/g, " ");
+  // Title-case each word, preserving known acronyms
+  return formatted
+    .split(/\s+/)
+    .map(word => {
+      const upper = word.toUpperCase();
+      if (KNOWN_ACRONYMS.has(upper)) return upper;
+      if (word.length <= 1) return word.toUpperCase();
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    })
+    .join(" ");
+}
+
 function markdownToHtml(md: string): string {
   return md
     .replace(/^### (.+)$/gm, '<h3 class="text-base font-semibold mt-6 mb-2">$1</h3>')
