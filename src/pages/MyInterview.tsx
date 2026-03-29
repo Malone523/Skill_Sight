@@ -38,6 +38,20 @@ export default function MyInterview() {
   const { data: employee, isLoading: empLoading } = useEmployee(employeeId || undefined);
   const { data: interviews, isLoading: intLoading } = useInterviews(employeeId || undefined);
   const { data: roles } = useRoles();
+  const { data: invitations, refetch: refetchInvitations } = useInvitations(employeeId || undefined);
+
+  const pendingInvite = invitations?.find((i: any) => i.status === "pending" && new Date(i.expires_at) > new Date());
+  const pack = pendingInvite?.preset_pack ? PRESET_PACKS.find(p => p.id === pendingInvite.preset_pack) : null;
+  const daysUntilExpiry = pendingInvite ? Math.ceil((new Date(pendingInvite.expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : 0;
+
+  const handleAcceptFromInterview = async () => {
+    if (!pendingInvite) return;
+    await supabase.from("interview_invitations" as any).update({ status: "accepted", accepted_at: new Date().toISOString() } as any).eq("id", pendingInvite.id);
+    await supabase.from("interviews").update({ status: "in_progress" }).eq("id", pendingInvite.interview_id);
+    refetchInvitations();
+    toast({ title: "Interview accepted!", description: "Your career discovery interview is now active." });
+    window.location.reload();
+  };
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversationHistory, setConversationHistory] = useState<{role: string, content: string}[]>([]);
