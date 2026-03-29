@@ -153,7 +153,7 @@ export function hybridWorthinessDecision(
   else {
     verdict = 'flag';
     worthy = false;
-    worthyScore = Math.max(partialScore, 0.20);
+    worthyScore = partialScore;
 
     // Choose reason phrase
     if (domain_signal && experience_real && has_metric && gap_severity === 'critical') {
