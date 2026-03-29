@@ -585,9 +585,9 @@ export default function ExternalCandidateProfile() {
                 </Badge>
               )}
 
-              {/* Evidence Analysis — collapsed by default */}
-              {absenceAnalysis && (
-                <AbsenceAnalysisSection analysis={absenceAnalysis} />
+              {/* Evidence Analysis — prefer post-interview data */}
+              {(absenceAnalysis || hybridInfo?.absence_analysis) && (
+                <AbsenceAnalysisSection analysis={absenceAnalysis || hybridInfo.absence_analysis} />
               )}
             </>
           );
