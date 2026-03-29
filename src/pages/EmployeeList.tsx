@@ -116,6 +116,11 @@ export default function EmployeeList() {
     return externalCandidates.filter((c: any) => c.status === "flagged_review").length;
   }, [externalCandidates]);
 
+  const deniedCount = useMemo(() => {
+    if (!externalCandidates) return 0;
+    return externalCandidates.filter((c: any) => c.status === "rejected" || c.manager_decision === "rejected").length;
+  }, [externalCandidates]);
+
 
   const handleApprove = async (candidate: any) => {
     const code = Math.floor(100000 + Math.random() * 900000).toString();
