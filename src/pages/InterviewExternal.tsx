@@ -175,9 +175,14 @@ export default function InterviewExternal() {
       }
 
       // Step 4: Run algorithms with animation
+      // Merge CV skills + interview-demonstrated skills
       const empSkills: SkillVector = {};
+      // First load CV-based skills from the candidate's worthy_score context
+      const cvText = candidate.candidateMessage || "";
+      // Add interview-extracted skills
       Object.entries(extractedSkills).forEach(([k, v]: [string, any]) => {
-        empSkills[k] = typeof v === "number" ? v : v?.proficiency || 0;
+        const prof = typeof v === "number" ? v : v?.proficiency || 0;
+        empSkills[k] = Math.max(empSkills[k] || 0, prof);
       });
 
       const reqSkills = skillsToVector(candidate.requiredSkills);
@@ -218,6 +223,7 @@ export default function InterviewExternal() {
       const scopeTrajectory = momentum?.scope_trajectory ?? null;
       const motivationAlignment = momentum?.motivation_alignment ?? null;
 
+      // Compute technical match from combined CV + interview skills
       const technicalMatch = fullResults.cosineSimilarity;
       const capabilityMatch = capabilityData
         ? Object.values(capabilityData.capability_profile || {}).filter((c: any) =>
@@ -226,6 +232,26 @@ export default function InterviewExternal() {
         : 0;
 
       const threeLayer = computeThreeLayerScore(technicalMatch, capabilityMatch, momentumScoreVal, roleType);
+
+      // Build updated gap analysis reflecting interview evidence
+      const interviewEvidenced: string[] = [];
+      const interviewIndirect: string[] = [];
+      Object.entries(extractedSkills).forEach(([k, v]: [string, any]) => {
+        const conf = typeof v === "object" ? v?.confidence : null;
+        if (conf === "high" || (typeof v === "number" ? v >= 3 : (v?.proficiency || 0) >= 3)) {
+          interviewEvidenced.push(k);
+        } else {
+          interviewIndirect.push(k);
+        }
+      });
+
+      // Update gap analysis: remove interview-demonstrated skills from critical gaps
+      const updatedGapAnalysis = { ...fullResults.gapAnalysis };
+      if (updatedGapAnalysis.criticalGaps) {
+        updatedGapAnalysis.criticalGaps = updatedGapAnalysis.criticalGaps.filter(
+          (g: any) => !interviewEvidenced.includes(g.skill)
+        );
+      }
 
       // Step 5: Update interview record
       await supabase.from("interviews").update({
