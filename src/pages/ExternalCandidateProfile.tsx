@@ -84,6 +84,7 @@ function ExpandableSection({ label, children }: { label: string; children: React
   );
 }
 
+export default function ExternalCandidateProfile() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [codeRevealed, setCodeRevealed] = useState(false);
