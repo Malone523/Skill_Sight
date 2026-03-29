@@ -48,8 +48,8 @@ export default function EmployeeList() {
   const initialView = searchParams.get("tab") === "external" ? "external" : "internal";
   const [viewMode, setViewMode] = useState<"internal" | "external">(initialView);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [extFilter, setExtFilter] = useState<"all" | "pending" | "flagged">(
-    searchParams.get("filter") === "pending" ? "pending" : searchParams.get("filter") === "flagged" ? "flagged" : "all"
+  const [extFilter, setExtFilter] = useState<"all" | "pending" | "flagged" | "denied">(
+    searchParams.get("filter") === "pending" ? "pending" : searchParams.get("filter") === "flagged" ? "flagged" : searchParams.get("filter") === "denied" ? "denied" : "all"
   );
   const [extRoleFilter, setExtRoleFilter] = useState<string>("all");
   const [declineOpen, setDeclineOpen] = useState(false);
