@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { PageHeader } from "@/components/PageHeader";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
@@ -10,12 +10,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useEmployees, useAllEmployeeSkills, useAlgorithmResults, useRoles } from "@/hooks/useData";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Clock, Star, Zap, Plus, UserPlus, Users, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
+import { Search, Clock, Star, Zap, Plus, UserPlus, Users, CheckCircle, XCircle, AlertTriangle, Loader2, Trash2, Database } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { AddExternalCandidateModal } from "@/components/AddExternalCandidateModal";
 import { ReadinessRing } from "@/components/ReadinessRing";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { seedDemoCandidates, clearDemoCandidates, type SeedProgress } from "@/lib/seedCandidates";
 
 
 function useExternalCandidates() {
