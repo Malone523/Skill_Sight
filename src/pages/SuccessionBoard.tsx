@@ -197,7 +197,7 @@ export default function SuccessionBoard() {
                   const techPct = Math.round((c.technicalMatch || 0) * 100);
                   const momPct = Math.round((c.momentumScore || 0) * 100);
                   return (
-                    <div key={c.employeeId} className={`rounded-lg border p-3 hover:shadow-md transition-shadow cursor-pointer ${
+                    <div key={c.employeeId} className={`rounded-lg border p-3 hover:shadow-md transition-shadow cursor-pointer flex flex-col ${
                       c.isExternal ? 'border-l-4' : 'border-border'
                     }`}
                       style={c.isExternal ? { borderLeftColor: '#8b5cf6' } : undefined}
