@@ -27,8 +27,9 @@ function useOpenRoles() {
 
 interface HybridResult {
   worthy: boolean;
-  confidence: 'high' | 'medium' | 'flagged';
-  method: 'both_agree_worthy' | 'both_agree_not_worthy' | 'flagged_ai_overrides' | 'flagged_algo_overrides';
+  confidence: 'high' | 'mixed_signals' | 'low';
+  verdict: string;
+  verdictLabel: string;
   worthyScore: number;
   reasoning: string;
   aiReasoning: string;
@@ -36,6 +37,8 @@ interface HybridResult {
   keyStrengths: string[];
   recommendedPreset: string;
   recruiterNote: string;
+  domainGapClassification: string;
+  seniorityCheck: string;
 }
 
 function hybridWorthinessDecision(
@@ -63,14 +66,16 @@ function hybridWorthinessDecision(
 
   const expYears = experienceProfile?.total_years || 0;
   const redFlags = experienceProfile?.red_flags?.length || 0;
+  const seniorityCheck = experienceProfile?.seniority_check || "not_applicable";
+  const domainGapClass = aiJudgment?.domain_gap_classification || "mixed";
 
-  // Score penalties instead of hard rejection gates
+  // Score with penalties
   let algoScore = partialScore;
   const algoReasons: string[] = [];
 
   if (effectiveCoverage < 0.20) {
     algoReasons.push(`Low skill coverage: ${Math.round(effectiveCoverage * 100)}%`);
-    algoScore *= 0.75; // Penalty, not rejection
+    algoScore *= 0.75;
   }
   if (expYears < 1) {
     algoReasons.push('Under 1 year experience');
@@ -81,155 +86,150 @@ function hybridWorthinessDecision(
     algoScore *= 0.85;
   }
 
-  // Minimum score floor: experienced candidates with domain-relevant skills get at least 0.20
+  // Seniority mismatch penalty (FIX 6)
+  if (seniorityCheck === "mismatch") {
+    algoScore = Math.max(0, algoScore - 0.20);
+    algoReasons.push("Seniority mismatch — senior title with low ownership evidence");
+  }
+
+  // Minimum score floor for experienced candidates
   if (expYears >= 3 && effectiveCoverage >= 0.40) {
     algoScore = Math.max(algoScore, 0.20);
   }
 
-  // High-potential override: advanced degree + experience + production impact → minimum FLAG
+  // High-potential override
+  const bvr = experienceProfile?.builder_verb_ratio ?? aiJudgment?.builder_verb_ratio ?? 0.5;
+  const strongMetrics = (experienceProfile?.strong_metrics_count || 0) + (experienceProfile?.medium_metrics_count || 0);
   const isHighPotential =
     (experienceProfile?.education_level === 'phd' || experienceProfile?.education_level === 'masters') &&
     expYears >= 4 &&
-    (aiJudgment?.metrics_count >= 3 || false) &&
-    (aiJudgment?.builder_verb_ratio >= 0.5 || false) &&
+    strongMetrics >= 3 &&
+    bvr >= 0.5 &&
     effectiveCoverage >= 0.40;
 
-  // Algo worthy threshold - no longer requires zero reasons (reasons are informational)
   const algoWorthy = algoScore >= 0.35;
   const aiWorthy = aiJudgment?.ai_verdict === true;
 
-  // High-potential override: force FLAG minimum
+  // Use calibrated confidence from parse-cv post-processing
+  const calibratedConf = aiJudgment?.calibrated_confidence || aiJudgment?.ai_confidence || "medium";
+
+  // Map to unified confidence labels
+  const mapConfidence = (c: string): 'high' | 'mixed_signals' | 'low' => {
+    if (c === 'high') return 'high';
+    if (c === 'low') return 'low';
+    return 'mixed_signals';
+  };
+
+  const buildResult = (
+    worthy: boolean,
+    verdictLabel: string,
+    reasoning: string,
+    score: number,
+    confidence: 'high' | 'mixed_signals' | 'low'
+  ): HybridResult => ({
+    worthy,
+    confidence,
+    verdict: worthy ? 'recommend' : (confidence === 'mixed_signals' || confidence === 'low' ? 'flag' : 'reject'),
+    verdictLabel,
+    worthyScore: score,
+    reasoning: reasoning,
+    aiReasoning: aiJudgment?.ai_reasoning || '',
+    concerns: [...algoReasons, ...(aiJudgment?.ai_concerns || [])].slice(0, 3),
+    keyStrengths: (aiJudgment?.ai_key_strengths || []).slice(0, 3),
+    recommendedPreset: aiJudgment?.ai_recommended_preset || 'technical_depth',
+    recruiterNote: aiJudgment?.ai_recruiter_note || '',
+    domainGapClassification: domainGapClass,
+    seniorityCheck,
+  });
+
+  // High-potential override → FLAG
   if (isHighPotential && !algoWorthy) {
-    return {
-      worthy: false,
-      confidence: 'flagged',
-      method: 'flagged_ai_overrides',
-      worthyScore: Math.max(algoScore, 0.30),
-      reasoning: 'High-potential candidate: advanced credentials + production-scale experience + measurable impact. Missing domain-specific stack is learnable. Recommend interview.',
-      aiReasoning: aiJudgment?.ai_reasoning || '',
-      concerns: algoReasons,
-      keyStrengths: aiJudgment?.ai_key_strengths || [],
-      recommendedPreset: aiJudgment?.ai_recommended_preset || 'hidden_potential',
-      recruiterNote: aiJudgment?.ai_recruiter_note || '',
-    };
+    return buildResult(
+      false,
+      'High-potential candidate — core capabilities exceptional, domain gaps are trainable',
+      'Advanced credentials with production-scale impact. Missing domain-specific stack is learnable within 3-6 months. Recommend interview.',
+      Math.max(algoScore, 0.30),
+      'mixed_signals'
+    );
   }
 
-  // If no AI judgment available, fall back to algo-only
-  if (!aiJudgment) {
-    return {
-      worthy: algoWorthy,
-      confidence: 'medium',
-      method: algoWorthy ? 'both_agree_worthy' : 'both_agree_not_worthy',
-      worthyScore: algoScore,
-      reasoning: algoWorthy
-        ? `Algorithmic analysis indicates interview-worthy (AI judgment unavailable).`
-        : `Below algorithmic threshold (AI judgment unavailable).`,
-      aiReasoning: '',
-      concerns: algoReasons,
-      keyStrengths: [],
-      recommendedPreset: 'technical_depth',
-      recruiterNote: '',
-    };
-  }
-
-  // AI also has high_potential_override → force FLAG
   if (aiJudgment?.high_potential_override && !algoWorthy) {
-    return {
-      worthy: false,
-      confidence: 'flagged',
-      method: 'flagged_ai_overrides',
-      worthyScore: Math.max(algoScore, 0.30),
-      reasoning: 'AI identified high-potential override: exceptional credentials and production impact despite missing domain keywords. Manager review recommended.',
-      aiReasoning: aiJudgment?.ai_reasoning || '',
-      concerns: algoReasons,
-      keyStrengths: aiJudgment?.ai_key_strengths || [],
-      recommendedPreset: aiJudgment?.ai_recommended_preset || 'hidden_potential',
-      recruiterNote: aiJudgment?.ai_recruiter_note || '',
-    };
+    return buildResult(
+      false,
+      'High-potential candidate — exceptional credentials warrant review',
+      aiJudgment?.ai_reasoning || 'Exceptional credentials and production impact despite skill keyword gaps.',
+      Math.max(algoScore, 0.30),
+      'mixed_signals'
+    );
+  }
+
+  if (!aiJudgment) {
+    return buildResult(
+      algoWorthy,
+      algoWorthy ? 'Strong match — High Confidence' : 'Insufficient match — High Confidence',
+      algoWorthy ? 'Algorithmic analysis indicates interview-worthy.' : 'Below algorithmic threshold.',
+      algoScore,
+      'mixed_signals'
+    );
   }
 
   if (algoWorthy && aiWorthy) {
-    const aiConf = aiJudgment?.ai_confidence;
-    const finalConfidence = aiConf === 'high' ? 'high' 
-      : aiConf === 'medium' ? 'medium'
-      : 'flagged' as const;
-    
     const builderRatio = aiJudgment?.builder_verb_ratio || 0.5;
-    const adjustedConfidence = builderRatio < 0.4 ? 'flagged' : finalConfidence;
-
-    return {
-      worthy: adjustedConfidence !== 'flagged',
-      confidence: adjustedConfidence as 'high' | 'medium' | 'flagged',
-      method: adjustedConfidence === 'flagged' ? 'flagged_algo_overrides' as const : 'both_agree_worthy' as const,
-      worthyScore: adjustedConfidence === 'flagged' ? algoScore : Math.max(algoScore, 0.75),
-      reasoning: adjustedConfidence === 'flagged'
-        ? 'Both signals pass thresholds, but low ownership language detected in CV. Manager review recommended.'
-        : 'Both algorithmic analysis and AI assessment agree this candidate is interview-worthy.',
-      aiReasoning: aiJudgment?.ai_reasoning || '',
-      concerns: aiJudgment?.ai_concerns || [],
-      keyStrengths: aiJudgment?.ai_key_strengths || [],
-      recommendedPreset: aiJudgment?.ai_recommended_preset || 'technical_depth',
-      recruiterNote: aiJudgment?.ai_recruiter_note || '',
-    };
+    if (builderRatio < 0.4) {
+      return buildResult(
+        false,
+        'Surface coverage without ownership depth',
+        'Skill keywords present but low ownership language detected. Manager review recommended.',
+        algoScore,
+        'mixed_signals'
+      );
+    }
+    return buildResult(
+      true,
+      'Strong match — High Confidence',
+      aiJudgment?.ai_reasoning || 'Both algorithmic and AI assessment agree this candidate is interview-worthy.',
+      Math.max(algoScore, 0.75),
+      mapConfidence(calibratedConf)
+    );
   }
 
   if (!algoWorthy && !aiWorthy) {
-    // Even both-reject gets overridden if high-potential
     if (isHighPotential) {
-      return {
-        worthy: false,
-        confidence: 'flagged',
-        method: 'flagged_ai_overrides',
-        worthyScore: Math.max(algoScore, 0.25),
-        reasoning: 'High-potential candidate flagged despite both signals below threshold. Advanced credentials warrant manager review.',
-        aiReasoning: aiJudgment?.ai_reasoning || '',
-        concerns: [...algoReasons, ...(aiJudgment?.ai_concerns || [])],
-        keyStrengths: aiJudgment?.ai_key_strengths || [],
-        recommendedPreset: 'hidden_potential',
-        recruiterNote: aiJudgment?.ai_recruiter_note || '',
-      };
+      return buildResult(
+        false,
+        'High-potential candidate flagged despite threshold miss',
+        'Advanced credentials warrant manager review.',
+        Math.max(algoScore, 0.25),
+        'mixed_signals'
+      );
     }
-    return {
-      worthy: false,
-      confidence: 'high',
-      method: 'both_agree_not_worthy',
-      worthyScore: Math.min(algoScore, 0.35),
-      reasoning: 'Both algorithmic analysis and AI assessment agree this candidate does not meet the threshold for this role.',
-      aiReasoning: aiJudgment?.ai_reasoning || '',
-      concerns: [...algoReasons, ...(aiJudgment?.ai_concerns || [])],
-      keyStrengths: aiJudgment?.ai_key_strengths || [],
-      recommendedPreset: aiJudgment?.ai_recommended_preset || 'technical_depth',
-      recruiterNote: aiJudgment?.ai_recruiter_note || '',
-    };
+    return buildResult(
+      false,
+      'Insufficient match — High Confidence',
+      aiJudgment?.ai_reasoning || 'Both assessment layers agree this candidate does not meet the threshold.',
+      Math.min(algoScore, 0.35),
+      mapConfidence(calibratedConf)
+    );
   }
 
   if (!algoWorthy && aiWorthy) {
-    return {
-      worthy: false,
-      confidence: 'flagged',
-      method: 'flagged_ai_overrides',
-      worthyScore: algoScore,
-      reasoning: 'Algorithm flagged weak skill keyword coverage, but AI assessment sees strong domain expertise. Manager review recommended.',
-      aiReasoning: aiJudgment?.ai_reasoning || '',
-      concerns: algoReasons,
-      keyStrengths: aiJudgment?.ai_key_strengths || [],
-      recommendedPreset: aiJudgment?.ai_recommended_preset || 'technical_depth',
-      recruiterNote: aiJudgment?.ai_recruiter_note || '',
-    };
+    return buildResult(
+      false,
+      'Domain gap with strong transferable capability',
+      aiJudgment?.ai_reasoning || 'Weak keyword coverage but strong domain expertise detected. Manager review recommended.',
+      algoScore,
+      'mixed_signals'
+    );
   }
 
-  return {
-    worthy: false,
-    confidence: 'flagged',
-    method: 'flagged_algo_overrides',
-    worthyScore: algoScore,
-    reasoning: 'Algorithmic skill coverage is sufficient, but AI assessment has concerns about depth or fit. Manager review recommended.',
-    aiReasoning: aiJudgment?.ai_reasoning || '',
-    concerns: aiJudgment?.ai_concerns || [],
-    keyStrengths: aiJudgment?.ai_key_strengths || [],
-    recommendedPreset: aiJudgment?.ai_recommended_preset || 'technical_depth',
-    recruiterNote: aiJudgment?.ai_recruiter_note || '',
-  };
+  // algoWorthy && !aiWorthy
+  return buildResult(
+    false,
+    'Surface coverage without ownership depth',
+    aiJudgment?.ai_reasoning || 'Sufficient skill keywords but concerns about depth or fit.',
+    algoScore,
+    'mixed_signals'
+  );
 }
 
 type SubmitPhase = "idle" | "parsing" | "scoring" | "saving" | "done_worthy" | "done_not_worthy" | "done_flagged";
