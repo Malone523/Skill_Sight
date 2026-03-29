@@ -346,7 +346,8 @@ export default function ApplyPage() {
         interview_worthy: hybrid.worthy,
         worthy_score: hybrid.worthyScore,
         worthy_reasoning: JSON.stringify({
-          method: hybrid.method,
+          verdict: hybrid.verdict,
+          verdictLabel: hybrid.verdictLabel,
           confidence: hybrid.confidence,
           reasoning: hybrid.reasoning,
           aiReasoning: hybrid.aiReasoning,
@@ -355,9 +356,13 @@ export default function ApplyPage() {
           recommendedPreset: hybrid.recommendedPreset,
           recruiterNote: hybrid.recruiterNote,
           builder_verb_ratio: aiJudgment?.builder_verb_ratio ?? null,
-          metrics_count: aiJudgment?.metrics_count ?? null,
+          strong_metrics_count: aiJudgment?.strong_metrics_count ?? null,
+          medium_metrics_count: aiJudgment?.medium_metrics_count ?? null,
+          weak_metrics_count: aiJudgment?.weak_metrics_count ?? null,
           verb_quality_assessment: aiJudgment?.verb_quality_assessment ?? null,
           absence_analysis: aiJudgment?.absence_analysis ?? null,
+          domain_gap_classification: hybrid.domainGapClassification,
+          seniority_check: hybrid.seniorityCheck,
         }),
         not_worthy_reasons: hybrid.concerns as any,
         submission_source: "candidate_self_submit",
@@ -369,7 +374,7 @@ export default function ApplyPage() {
         full_algorithm_results: results as any,
       } as any);
 
-      if (hybrid.confidence === 'flagged') {
+      if (hybrid.verdict === 'flag') {
         setPhase("done_flagged");
       } else if (hybrid.worthy) {
         setPhase("done_worthy");
