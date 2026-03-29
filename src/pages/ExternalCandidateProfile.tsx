@@ -17,8 +17,9 @@ import {
   ArrowLeft, ArrowRight, BarChart3, Shield,
   FileText, Sparkles, Mail, Eye, EyeOff, Quote, AlertTriangle,
   CheckCircle, XCircle, ChevronDown, ChevronUp, Star, Search,
-  Copy, Trash2,
+  Copy, Trash2, UserPlus, Loader2,
 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 
 function markdownToHtml(md: string): string {
   return md
