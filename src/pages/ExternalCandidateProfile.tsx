@@ -354,7 +354,7 @@ export default function ExternalCandidateProfile() {
           const iconColor = isPositive ? 'text-green-600' : isFlag ? 'text-amber-600' : 'text-destructive';
           const Icon = isPositive ? CheckCircle : isFlag ? AlertTriangle : XCircle;
           const titleColor = isPositive ? 'text-green-700' : isFlag ? 'text-amber-700' : 'text-destructive';
-          const agreementLabel = confidence === 'high' ? 'Both algorithmic and AI assessment agree.' : confidence === 'low' ? 'Assessment signals are weak or insufficient.' : 'Algorithmic and AI assessments show mixed signals.';
+          const agreementLabel = isHardReject ? 'Candidate does not meet minimum signal threshold.' : confidence === 'high' ? 'Both algorithmic and AI assessment agree.' : confidence === 'low' ? 'Assessment signals are weak or insufficient.' : 'Algorithmic and AI assessments show mixed signals.';
 
           // Derive ownership percentages from either object or decimal ratio
           const builderPct = ownershipRaw?.builder_pct ?? ownershipRaw?.builder ?? (builderVerbRatio != null ? Math.round(builderVerbRatio * 100) : null);
