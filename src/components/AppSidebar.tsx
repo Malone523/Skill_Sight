@@ -6,6 +6,7 @@ import {
   Briefcase,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
+import bmwLogo from "@/assets/bmw_logo.svg";
 import { useLocation } from "react-router-dom";
 import {
   Sidebar,
@@ -52,9 +53,7 @@ export function AppSidebar() {
           {!collapsed && (
             <div className="animate-fade-in">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-bmw-blue flex items-center justify-center">
-                  <span className="text-xs font-bold text-white">BMW</span>
-                </div>
+                <img src={bmwLogo} alt="BMW" className="w-8 h-8 rounded-lg" />
                 <div>
                   <h1 className="text-sm font-bold leading-tight">SkillSight</h1>
                   <p className="text-[11px] text-muted-foreground">BMW Group</p>
@@ -63,9 +62,7 @@ export function AppSidebar() {
             </div>
           )}
           {collapsed && (
-            <div className="w-8 h-8 rounded-lg bg-bmw-blue flex items-center justify-center mx-auto">
-              <span className="text-[8px] font-bold text-white">BMW</span>
-            </div>
+            <img src={bmwLogo} alt="BMW" className="w-8 h-8 rounded-lg mx-auto" />
           )}
         </div>
 
