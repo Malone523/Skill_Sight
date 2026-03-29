@@ -75,7 +75,16 @@ function AbsenceAnalysisSection({ analysis }: { analysis: { critical_gaps?: stri
   );
 }
 
-export default function ExternalCandidateProfile() {
+function ExpandableSection({ label, children }: { label: string; children: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div>
+      <button onClick={() => setOpen(!open)} className="text-[11px] text-primary hover:underline">{label}</button>
+      {open && <div className="mt-1">{children}</div>}
+    </div>
+  );
+}
+
   const { id } = useParams();
   const navigate = useNavigate();
   const [codeRevealed, setCodeRevealed] = useState(false);
