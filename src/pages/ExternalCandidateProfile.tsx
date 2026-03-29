@@ -514,6 +514,8 @@ function ExpandableSection({ label, children }: { label: string; children: React
                 </CardContent>
               </Card>
             )}
+          </>
+        )}
 
         {/* Section 6 — Interview Transcript (collapsible) */}
         {conversationHistory.length > 0 && (
