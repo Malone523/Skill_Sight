@@ -441,58 +441,6 @@ export default function AnalysisPage() {
           </Card>
         </div>
 
-        {/* Momentum Assessment */}
-        {momentumBreakdown && momentumBreakdown.momentum_score != null && (
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <Zap className="h-4 w-4 text-primary" /> Momentum Assessment — Where This Person Is Going
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <MomentumRow
-                label="Learning Velocity"
-                icon={<Brain className="h-3.5 w-3.5" />}
-                value={momentumBreakdown.learning_velocity || 0}
-                evidence={momentumBreakdown.learning_velocity_evidence}
-                signals={momentumBreakdown.learning_velocity_signals}
-                color="hsl(var(--primary))"
-              />
-              <MomentumRow
-                label="Scope Trajectory"
-                icon={<TrendingUp className="h-3.5 w-3.5" />}
-                value={momentumBreakdown.scope_trajectory || 0}
-                evidence={momentumBreakdown.scope_trajectory_evidence}
-                signals={momentumBreakdown.scope_trajectory_signals}
-                color="hsl(var(--green, 142 76% 36%))"
-              />
-              <MomentumRow
-                label="Motivation Alignment"
-                icon={<Heart className="h-3.5 w-3.5" />}
-                value={momentumBreakdown.motivation_alignment || 0}
-                evidence={momentumBreakdown.motivation_alignment_evidence}
-                signals={momentumBreakdown.motivation_alignment_signals}
-                color="hsl(270 60% 55%)"
-              />
-
-              {momentumBreakdown.momentum_narrative && (
-                <div className="border-l-4 border-primary/40 bg-primary/5 rounded-r-lg p-4 mt-4">
-                  <p className="text-sm italic text-foreground/80">{momentumBreakdown.momentum_narrative}</p>
-                </div>
-              )}
-
-              {(momentumBreakdown.trajectory_risk === 'medium' || momentumBreakdown.trajectory_risk === 'high') && (
-                <div className="flex items-start gap-3 p-3 bg-status-amber-light rounded-lg border border-status-amber/20">
-                  <AlertTriangle className="h-4 w-4 text-status-amber mt-0.5" />
-                  <div>
-                    <span className="text-xs font-semibold text-status-amber">Trajectory Risk: {momentumBreakdown.trajectory_risk}</span>
-                    <p className="text-xs text-muted-foreground mt-0.5">{momentumBreakdown.trajectory_risk_reason}</p>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
 
         {/* Strengths + Rare Skills */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
