@@ -374,7 +374,7 @@ export default function EmployeeList() {
                   const isPendingReview = isSelfSubmit && (c as any).manager_decision === "pending" && c.interview_worthy;
                   const isFlagged = c.status === "flagged_review";
                   const hybridInfo = isFlagged ? parseHybridInfo(c) : null;
-                  const isPool = isTalentPool(c);
+                  const isPool = c.status === "talent_pool" || c.status === "proceeding";
                   const algoResults = c.full_algorithm_results as any;
 
                   return (
