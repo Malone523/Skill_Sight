@@ -10,15 +10,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import {
-  ArrowLeft, ArrowRight, UserPlus, Target, Zap, Brain, BarChart3, Shield, TrendingUp,
-  FileText, Sparkles, ExternalLink, Mail, Eye, EyeOff, Quote, AlertTriangle,
-  CheckCircle, XCircle, ChevronDown, ChevronUp, Star, Heart, Route, Search, ShieldAlert,
-  Copy, RefreshCw, Trash2,
+  ArrowLeft, ArrowRight, BarChart3, Shield,
+  FileText, Sparkles, Mail, Eye, EyeOff, Quote, AlertTriangle,
+  CheckCircle, XCircle, ChevronDown, ChevronUp, Star, Search,
+  Copy, Trash2,
 } from "lucide-react";
 
 function markdownToHtml(md: string): string {
@@ -71,6 +70,16 @@ function AbsenceAnalysisSection({ analysis }: { analysis: { critical_gaps?: stri
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+function ExpandableSection({ label, children }: { label: string; children: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div>
+      <button onClick={() => setOpen(!open)} className="text-[11px] text-primary hover:underline">{label}</button>
+      {open && <div className="mt-1">{children}</div>}
     </div>
   );
 }
@@ -159,6 +168,7 @@ export default function ExternalCandidateProfile() {
   const report = results.reportMarkdown;
   const interviewSkills = (candidate.interview_skills || {}) as any;
   const isCompleted = candidate.status === "completed";
+  const hasAssessment = !!(hybridInfo || candidate.worthy_score != null);
   const initials = candidate.name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
 
   const sourceBadge = () => {
@@ -178,7 +188,12 @@ export default function ExternalCandidateProfile() {
       rejected: { label: "Declined", variant: "secondary" },
       flagged_review: { label: "⚠ Needs Review", variant: "outline", className: "border-amber-500 text-amber-700 bg-amber-50" },
     };
-    const s = map[candidate.status || ""] || { label: candidate.status || "Unknown", variant: "secondary" as const };
+    // Don't show "Pending" when assessment exists
+    const status = candidate.status || "";
+    if (status === "pending_manager_review" && !hasAssessment) {
+      return <Badge variant="outline" className="text-[10px]">Awaiting Assessment</Badge>;
+    }
+    const s = map[status] || { label: status || "Unknown", variant: "secondary" as const };
     return <Badge variant={s.variant} className={`text-[10px] ${s.className || ''}`}>{s.label}</Badge>;
   };
 
@@ -269,7 +284,7 @@ export default function ExternalCandidateProfile() {
                   <div className="w-12 h-12 rounded-full border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
                     <span className="text-[10px]">—</span>
                   </div>
-                  <span className="text-xs">Pending Assessment</span>
+                  <span className="text-xs">Awaiting Assessment</span>
                 </div>
               )}
             </div>
@@ -277,29 +292,25 @@ export default function ExternalCandidateProfile() {
 
           {/* Action buttons */}
           <div className="flex flex-wrap gap-2 mt-4">
-            {(candidate.status === "pending_manager_review" || candidate.status === "flagged_review" || ((candidate as any).submission_source === "candidate_self_submit" && (candidate as any).manager_decision === "pending" && candidate.interview_worthy)) && (
+             {(candidate.status === "pending_manager_review" || candidate.status === "flagged_review" || ((candidate as any).submission_source === "candidate_self_submit" && (candidate as any).manager_decision === "pending" && candidate.interview_worthy)) && (
               <>
                 <Button size="sm" className="bg-green-600 hover:bg-green-700 text-xs" onClick={handleApprove}>
-                  <CheckCircle className="h-3 w-3 mr-1" />{candidate.status === "flagged_review" ? "Approve — Send Interview Code" : "Send Interview Code"}
+                  <CheckCircle className="h-3 w-3 mr-1" />Approve for Interview
                 </Button>
                 <Button variant="outline" size="sm" className="text-xs text-destructive border-destructive/30" onClick={() => setDeclineOpen(true)}>
-                  <XCircle className="h-3 w-3 mr-1" />{candidate.status === "flagged_review" ? "Reject" : "Decline"}
+                  <XCircle className="h-3 w-3 mr-1" />Decline
                 </Button>
               </>
             )}
             {candidate.status === "invited" && candidate.access_code && (
-              <>
-                <Button variant="outline" size="sm" className="text-xs" onClick={() => { navigator.clipboard.writeText(candidate.access_code!); toast.success("Code copied"); }}>
-                  <Copy className="h-3 w-3 mr-1" />Copy Code
-                </Button>
-              </>
+              <Button variant="outline" size="sm" className="text-xs" onClick={() => { navigator.clipboard.writeText(candidate.access_code!); toast.success("Code copied"); }}>
+                <Copy className="h-3 w-3 mr-1" />Copy Code
+              </Button>
             )}
             {isCompleted && (
-              <>
-                <Button size="sm" className="text-xs" onClick={() => navigate(`/analysis-external/${candidate.id}`)}>
-                  View Full Assessment
-                </Button>
-              </>
+              <Button size="sm" className="text-xs" onClick={() => navigate(`/analysis-external/${candidate.id}`)}>
+                View Full Assessment
+              </Button>
             )}
             {(candidate.status === "rejected" || candidate.status === "below_threshold") && (
               <Button variant="destructive" size="sm" className="text-xs" onClick={() => setDeleteOpen(true)}>
@@ -309,334 +320,96 @@ export default function ExternalCandidateProfile() {
           </div>
         </div>
 
-        {/* Hybrid Verdict Banner */}
+        {/* Unified Assessment Summary (replaces old hybrid verdict + AI Screening Decision) */}
         {hybridInfo && (() => {
-          const builderRatio = hybridInfo.builder_verb_ratio != null ? hybridInfo.builder_verb_ratio : null;
-          const metricsCount = hybridInfo.metrics_count != null ? hybridInfo.metrics_count : null;
+          const verdictLabel = hybridInfo.verdictLabel || hybridInfo.reasoning || '';
+          const confidence = hybridInfo.confidence || 'mixed_signals';
+          const confLabel = confidence === 'high' ? 'High Confidence' : confidence === 'low' ? 'Low Confidence' : 'Mixed Signals';
+          const reasoning = hybridInfo.reasoning || hybridInfo.aiReasoning || '';
+          // Truncate reasoning to 3 sentences
+          const sentences = reasoning.match(/[^.!?]+[.!?]+/g) || [reasoning];
+          const shortReasoning = sentences.slice(0, 3).join(' ').trim();
+          const hasMore = sentences.length > 3;
           const absenceAnalysis = hybridInfo.absence_analysis || null;
-          const verbAssessment = hybridInfo.verb_quality_assessment || null;
+          const seniorityCheck = hybridInfo.seniority_check || null;
+          const domainGaps = hybridInfo.domain_gap_classification || null;
+          const strongMetrics = (hybridInfo.strong_metrics_count || 0) + (hybridInfo.medium_metrics_count || 0);
 
-          const OwnershipSignals = () => (
-            <div className="space-y-3 mt-3 pt-3 border-t border-border/50">
-              {/* Builder/Participant ratio bar */}
-              {builderRatio != null && (
-                <div>
-                  <p className="text-[11px] font-medium text-muted-foreground mb-1">Ownership Signal</p>
-                  <div className="flex h-3 rounded-full overflow-hidden bg-muted">
-                    <div className="bg-primary h-full transition-all" style={{ width: `${Math.round(builderRatio * 100)}%` }} />
-                    <div className="bg-muted-foreground/20 h-full flex-1" />
-                  </div>
-                  <div className="flex justify-between mt-0.5">
-                    <span className="text-[10px] text-primary font-medium">Builder {Math.round(builderRatio * 100)}%</span>
-                    <span className="text-[10px] text-muted-foreground">Participant {Math.round((1 - builderRatio) * 100)}%</span>
-                  </div>
-                  {builderRatio < 0.5 && (
-                    <p className="text-[10px] text-amber-600 mt-0.5 flex items-center gap-1">
-                      <AlertTriangle className="h-2.5 w-2.5" />Mostly participation language detected.
-                    </p>
-                  )}
-                  {verbAssessment && <p className="text-[10px] text-muted-foreground italic mt-0.5">{verbAssessment}</p>}
-                </div>
-              )}
+          const isPositive = hybridInfo.verdict === 'recommend' || candidate.interview_worthy;
+          const isFlag = hybridInfo.verdict === 'flag' || confidence === 'mixed_signals' || confidence === 'low';
 
-              {/* Metrics count badge */}
-              {metricsCount != null && (
-                <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className={`text-[10px] ${metricsCount >= 3 ? 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300' : metricsCount >= 1 ? 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300' : 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300'}`}>
-                    <BarChart3 className="h-3 w-3 mr-1" />{metricsCount} measurable impact{metricsCount !== 1 ? 's' : ''} found
-                  </Badge>
-                </div>
-              )}
-
-              {/* Absence analysis (collapsible) */}
-              {absenceAnalysis && (
-                <AbsenceAnalysisSection analysis={absenceAnalysis} />
-              )}
-            </div>
-          );
+          const borderClass = isPositive ? 'border-green-400 border-2' : isFlag ? 'border-amber-400 border-2' : 'border-destructive border-2';
+          const iconColor = isPositive ? 'text-green-600' : isFlag ? 'text-amber-600' : 'text-destructive';
+          const Icon = isPositive ? CheckCircle : isFlag ? AlertTriangle : XCircle;
+          const titleColor = isPositive ? 'text-green-700' : isFlag ? 'text-amber-700' : 'text-destructive';
 
           return (
-          <Card className={
-            hybridInfo.confidence === 'flagged'
-              ? 'border-amber-400 border-2'
-              : hybridInfo.method === 'both_agree_worthy'
-                ? 'border-green-400 border-2'
-                : hybridInfo.method === 'both_agree_not_worthy'
-                  ? 'border-destructive border-2'
-                  : ''
-          }>
-            <CardContent className="p-5 space-y-4">
-              {/* BOTH AGREE WORTHY */}
-              {hybridInfo.method === 'both_agree_worthy' && (
-                <>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5 text-green-600" />
-                    <div>
-                      <h3 className="text-base font-bold text-green-700">✓ Interview Recommended — {hybridInfo.confidence === 'high' ? 'High' : 'Medium'} Confidence</h3>
-                      <p className="text-xs text-muted-foreground">Both algorithmic and AI assessment agree.</p>
+            <Card className={borderClass}>
+              <CardContent className="p-5 space-y-3">
+                {/* Verdict + Confidence */}
+                <div className="flex items-start gap-2">
+                  <Icon className={`h-5 w-5 ${iconColor} mt-0.5 shrink-0`} />
+                  <div>
+                    <h3 className={`text-base font-bold ${titleColor}`}>{verdictLabel}</h3>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <Badge variant="outline" className="text-[10px]">{confLabel}</Badge>
+                      {seniorityCheck && seniorityCheck !== 'not_applicable' && (
+                        <Badge variant="outline" className={`text-[10px] ${seniorityCheck === 'validated' ? 'border-green-300 text-green-700' : seniorityCheck === 'mismatch' ? 'border-destructive text-destructive' : 'border-amber-300 text-amber-700'}`}>
+                          Seniority: {seniorityCheck === 'validated' ? 'Validated' : seniorityCheck === 'mismatch' ? 'Mismatch' : 'Insufficient Evidence'}
+                        </Badge>
+                      )}
+                      {domainGaps && domainGaps !== 'mixed' && (
+                        <Badge variant="outline" className={`text-[10px] ${domainGaps === 'trainable' ? 'border-blue-300 text-blue-700' : 'border-destructive text-destructive'}`}>
+                          Domain gaps: {domainGaps === 'trainable' ? 'Trainable' : 'Critical'}
+                        </Badge>
+                      )}
+                      {strongMetrics > 0 && (
+                        <Badge variant="secondary" className="text-[10px]">
+                          <BarChart3 className="h-2.5 w-2.5 mr-1" />{strongMetrics} measurable impact{strongMetrics !== 1 ? 's' : ''}
+                        </Badge>
+                      )}
                     </div>
                   </div>
-                  {hybridInfo.aiReasoning && (
-                    <p className="text-sm text-foreground/80">{hybridInfo.aiReasoning}</p>
-                  )}
-                  {hybridInfo.recruiterNote && (
-                    <p className="text-sm italic text-muted-foreground border-l-2 border-muted-foreground/30 pl-3">"{hybridInfo.recruiterNote}"</p>
-                  )}
-                  {hybridInfo.keyStrengths?.length > 0 && (
-                    <ul className="space-y-1">
-                      {hybridInfo.keyStrengths.map((s: string, i: number) => (
-                        <li key={i} className="text-xs text-green-700 flex items-start gap-1.5">
-                          <CheckCircle className="h-3 w-3 mt-0.5 shrink-0" />{s}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  {hybridInfo.recommendedPreset && (
-                    <Badge variant="secondary" className="text-[10px]">Recommended: {hybridInfo.recommendedPreset.replace(/_/g, ' ')}</Badge>
-                  )}
-                  <OwnershipSignals />
-                </>
-              )}
-
-              {/* BOTH AGREE NOT WORTHY */}
-              {hybridInfo.method === 'both_agree_not_worthy' && (
-                <>
-                  <div className="flex items-center gap-2">
-                    <XCircle className="h-5 w-5 text-destructive" />
-                    <div>
-                      <h3 className="text-base font-bold text-destructive">✗ Below Threshold — High Confidence</h3>
-                      <p className="text-xs text-muted-foreground">Both algorithmic and AI assessment agree.</p>
-                    </div>
-                  </div>
-                  {hybridInfo.aiReasoning && (
-                    <p className="text-sm text-foreground/80">{hybridInfo.aiReasoning}</p>
-                  )}
-                  {hybridInfo.recruiterNote && (
-                    <p className="text-sm italic text-muted-foreground border-l-2 border-muted-foreground/30 pl-3">"{hybridInfo.recruiterNote}"</p>
-                  )}
-                  {hybridInfo.concerns?.length > 0 && (
-                    <ul className="space-y-1">
-                      {hybridInfo.concerns.map((c: string, i: number) => (
-                        <li key={i} className="text-xs text-destructive flex items-start gap-1.5">
-                          <XCircle className="h-3 w-3 mt-0.5 shrink-0" />{c}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  {hybridInfo.keyStrengths?.length > 0 && (
-                    <div>
-                      <p className="text-[11px] text-muted-foreground italic mb-1">Strengths noted but insufficient for this role:</p>
-                      <ul className="space-y-1">
-                        {hybridInfo.keyStrengths.map((s: string, i: number) => (
-                          <li key={i} className="text-xs text-muted-foreground flex items-start gap-1.5">
-                            <Star className="h-3 w-3 mt-0.5 shrink-0" />{s}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  <OwnershipSignals />
-                </>
-              )}
-
-              {/* FLAGGED — CONFLICTING */}
-              {hybridInfo.confidence === 'flagged' && (
-                <>
-                  <div className="flex items-center gap-2">
-                    <AlertTriangle className="h-5 w-5 text-amber-600" />
-                    <div>
-                      <h3 className="text-base font-bold text-amber-700">⚠ Conflicting Assessment — Manager Review Required</h3>
-                    </div>
-                  </div>
-                  <div className="text-sm text-foreground/80">
-                    {hybridInfo.method === 'flagged_ai_overrides' ? (
-                      <p><strong>Algorithm:</strong> Below threshold due to skill name mismatch. <strong>AI Assessment:</strong> Strong domain expertise detected. The AI recommends proceeding.</p>
-                    ) : (
-                      <p><strong>Algorithm:</strong> Sufficient skill coverage. <strong>AI Assessment:</strong> Has concerns about depth or fit.</p>
-                    )}
-                  </div>
-                  {hybridInfo.aiReasoning && (
-                    <div className="border-l-4 border-primary/40 pl-3 py-1 bg-primary/5 rounded-r-md">
-                      <p className="text-sm text-foreground/80 italic">{hybridInfo.aiReasoning}</p>
-                    </div>
-                  )}
-                  {hybridInfo.recruiterNote && (
-                    <p className="text-sm italic text-muted-foreground border-l-2 border-muted-foreground/30 pl-3">"{hybridInfo.recruiterNote}"</p>
-                  )}
-                  {hybridInfo.concerns?.length > 0 && (
-                    <ul className="space-y-1">
-                      {hybridInfo.concerns.map((c: string, i: number) => (
-                        <li key={i} className="text-xs text-amber-700 flex items-start gap-1.5">
-                          <AlertTriangle className="h-3 w-3 mt-0.5 shrink-0" />{c}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  {hybridInfo.keyStrengths?.length > 0 && (
-                    <ul className="space-y-1">
-                      {hybridInfo.keyStrengths.map((s: string, i: number) => (
-                        <li key={i} className="text-xs text-green-700 flex items-start gap-1.5">
-                          <CheckCircle className="h-3 w-3 mt-0.5 shrink-0" />{s}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  <OwnershipSignals />
-                </>
-              )}
-            </CardContent>
-          </Card>
-          );
-        })()}
-
-        {/* Section 1 — Candidate Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Candidate Details</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <InfoRow label="Full Name" value={candidate.name} />
-              <InfoRow label="Email" value={
-                (candidate as any).candidate_email ? (
-                  <a href={`mailto:${(candidate as any).candidate_email}`} className="text-primary hover:underline flex items-center gap-1">
-                    <Mail className="h-3 w-3" />{(candidate as any).candidate_email}
-                  </a>
-                ) : candidate.email || "—"
-              } />
-              <InfoRow label="Role Applied For" value={role?.title || "—"} />
-              <InfoRow label="Submitted At" value={
-                (candidate as any).submitted_at
-                  ? new Date((candidate as any).submitted_at).toLocaleString()
-                  : candidate.created_at ? new Date(candidate.created_at).toLocaleString() : "—"
-              } />
-              <InfoRow label="Submission Source" value={(candidate as any).submission_source?.replace(/_/g, " ") || "—"} />
-              <InfoRow label="Manager Decision" value={
-                <span className={`capitalize ${(candidate as any).manager_decision === "approved" ? "text-green-600" : (candidate as any).manager_decision === "rejected" ? "text-destructive" : "text-muted-foreground"}`}>
-                  {(candidate as any).manager_decision || "pending"}
-                </span>
-              } />
-              <InfoRow label="Access Code" value={
-                candidate.access_code ? (
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono">{codeRevealed ? candidate.access_code : candidate.access_code.slice(0, 3) + "***"}</span>
-                    <button onClick={() => setCodeRevealed(!codeRevealed)} className="text-muted-foreground hover:text-foreground">
-                      {codeRevealed ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-                    </button>
-                  </div>
-                ) : "—"
-              } />
-              <InfoRow label="Code Expires" value={
-                candidate.code_expires_at ? new Date(candidate.code_expires_at).toLocaleString() : "—"
-              } />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Candidate Message */}
-        {(candidate as any).candidate_message && (
-          <Card>
-            <CardContent className="p-5">
-              <div className="flex items-start gap-3">
-                <Quote className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">Candidate's Message</p>
-                  <p className="text-sm text-foreground/80 italic">"{(candidate as any).candidate_message}"</p>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
-        {/* Section 2 — CV Content */}
-        {(candidate as any).interview_notes && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <FileText className="h-4 w-4" />Submitted CV
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="bg-secondary rounded-lg p-4 max-h-80 overflow-y-auto">
-                <pre className="text-xs font-mono whitespace-pre-wrap text-foreground/80">
-                  {(candidate as any).interview_notes}
-                </pre>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Section 3 — AI-Extracted Skills */}
-        {Object.keys(interviewSkills).length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Sparkles className="h-4 w-4" />AI-Extracted Skills
-              </CardTitle>
-              <p className="text-[11px] text-muted-foreground">Extracted by CV Agent — requires interview verification</p>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {Object.entries(interviewSkills).map(([skill, data]: [string, any]) => (
-                  <div key={skill} className="rounded-lg border border-border p-2 text-xs">
-                    <span className="font-medium">{skill.replace(/([A-Z])/g, " $1").trim()}</span>
-                    {typeof data === "object" && data?.proficiency != null && (
-                      <Badge variant="secondary" className="ml-2 text-[9px]">
-                        {data.proficiency}/3
-                      </Badge>
-                    )}
-                  </div>
-                ))}
-              </div>
-              <div className="mt-3 p-2 rounded-md bg-status-amber-light border border-status-amber/20 text-xs text-status-amber flex items-center gap-2">
-                <AlertTriangle className="h-3 w-3 shrink-0" />
-                CV data is claimed, not verified. Skills marked ⚠ should be confirmed in the interview.
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Section 4 — Worthiness Assessment */}
-        <Card className={`border-l-4 ${candidate.interview_worthy ? "border-l-green-500" : "border-l-destructive"}`}>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <Shield className="h-4 w-4" />AI Screening Decision
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {candidate.interview_worthy ? (
-              <div className="space-y-3">
-                <p className="text-lg font-bold text-green-600 dark:text-green-400">✓ Interview Recommended</p>
-                {candidate.worthy_score != null && (
-                  <p className="text-sm text-muted-foreground">Score: <span className="font-mono font-semibold">{Math.round(candidate.worthy_score * 100)}%</span></p>
+                {/* 3-sentence reasoning */}
+                <p className="text-sm text-foreground/80">{shortReasoning}</p>
+                {hasMore && (
+                  <ExpandableSection label="See full analysis">
+                    <p className="text-sm text-foreground/80">{sentences.slice(3).join(' ').trim()}</p>
+                  </ExpandableSection>
                 )}
-                {candidate.worthy_reasoning && <p className="text-sm text-foreground/80">{candidate.worthy_reasoning}</p>}
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <p className="text-lg font-bold text-destructive">✗ Below Threshold</p>
-                {(candidate.not_worthy_reasons as any[])?.length > 0 && (
+
+                {/* Key strengths (max 3) */}
+                {hybridInfo.keyStrengths?.length > 0 && (
                   <ul className="space-y-1">
-                    {(candidate.not_worthy_reasons as any[]).map((r: any, i: number) => (
-                      <li key={i} className="text-sm text-destructive/80 flex items-start gap-2">
-                        <span className="mt-1">•</span>
-                        <span>{typeof r === "string" ? r : r.reason || JSON.stringify(r)}</span>
+                    {hybridInfo.keyStrengths.slice(0, 3).map((s: string, i: number) => (
+                      <li key={i} className="text-xs text-green-700 flex items-start gap-1.5">
+                        <CheckCircle className="h-3 w-3 mt-0.5 shrink-0" />{s}
                       </li>
                     ))}
                   </ul>
                 )}
-                <p className="text-xs text-muted-foreground italic">These gaps are too large to bridge in a reasonable timeframe for this role.</p>
-                {!candidate.access_code && (
-                  <Button variant="outline" size="sm" className="text-xs text-muted-foreground" onClick={() => {
-                    if (confirm("Override AI screening and send interview code anyway?")) handleApprove();
-                  }}>
-                    Override — Send Interview Code Anyway
-                  </Button>
+
+                {/* Key gaps (max 3) */}
+                {hybridInfo.concerns?.length > 0 && (
+                  <ul className="space-y-1">
+                    {hybridInfo.concerns.slice(0, 3).map((c: string, i: number) => (
+                      <li key={i} className="text-xs text-amber-700 flex items-start gap-1.5">
+                        <AlertTriangle className="h-3 w-3 mt-0.5 shrink-0" />{c}
+                      </li>
+                    ))}
+                  </ul>
                 )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+
+                {/* Evidence Analysis (collapsible) */}
+                {absenceAnalysis && (
+                  <AbsenceAnalysisSection analysis={absenceAnalysis} />
+                )}
+              </CardContent>
+            </Card>
+          );
+        })()}
 
         {/* Section 5 — Interview & Assessment (after completion) */}
         {isCompleted && score != null && (
@@ -730,140 +503,14 @@ export default function ExternalCandidateProfile() {
               </div>
             )}
 
-            {/* Momentum Assessment */}
-            {momentumBreakdown && momentumBreakdown.momentum_score != null && (
+            {/* AI Report */}
+            {report && (
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                    <Zap className="h-4 w-4 text-primary" />Momentum Assessment
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <MomentumRow label="Learning Velocity" icon={<Brain className="h-3.5 w-3.5" />}
-                    value={momentumBreakdown.learning_velocity || 0}
-                    evidence={momentumBreakdown.learning_velocity_evidence}
-                    color="hsl(var(--primary))" />
-                  <MomentumRow label="Scope Trajectory" icon={<TrendingUp className="h-3.5 w-3.5" />}
-                    value={momentumBreakdown.scope_trajectory || 0}
-                    evidence={momentumBreakdown.scope_trajectory_evidence}
-                    color="hsl(142 76% 36%)" />
-                  <MomentumRow label="Motivation Alignment" icon={<Heart className="h-3.5 w-3.5" />}
-                    value={momentumBreakdown.motivation_alignment || 0}
-                    evidence={momentumBreakdown.motivation_alignment_evidence}
-                    color="hsl(270 60% 55%)" />
-                  {momentumBreakdown.momentum_narrative && (
-                    <div className="border-l-4 border-primary/40 bg-primary/5 rounded-r-lg p-4">
-                      <p className="text-sm italic text-foreground/80">{momentumBreakdown.momentum_narrative}</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Transition Profile */}
-            {transitionProfile?.is_transitioning && (
-              <Card className="border-primary/30 bg-primary/5">
-                <CardContent className="p-4 flex items-start gap-3">
-                  <TrendingUp className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="text-sm font-semibold">
-                      Active Transition Profile — {transitionProfile.transition_stage === "mid" ? "Mid-Transition" : transitionProfile.transition_stage === "late" ? "Late-Stage" : "Early Transition"}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{transitionProfile.maturity_note}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Upskilling Paths */}
-            {upskillingPaths.length > 0 && (
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                    <Route className="h-4 w-4 text-primary" />Learning Pathways
-                  </CardTitle>
+                  <CardTitle className="text-sm font-semibold">AI Report</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {upskillingPaths.map((path: any, i: number) => (
-                      <div key={i}>
-                        <div className="flex items-center gap-2 mb-2">
-                          <Badge variant="outline" className="text-xs">{path.targetSkill?.replace(/([A-Z])/g, " $1").trim()}</Badge>
-                          <span className="text-[11px] text-muted-foreground font-mono">{path.totalWeeks} weeks</span>
-                        </div>
-                        <div className="flex items-center gap-1 flex-wrap">
-                          {path.path?.map((node: string, j: number) => (
-                            <div key={j} className="flex items-center gap-1">
-                              <span className="px-2 py-0.5 text-xs rounded-md bg-primary/10 text-primary font-medium">
-                                {node.replace(/([A-Z])/g, " $1").trim()}
-                              </span>
-                              {j < path.path.length - 1 && <ArrowRight className="h-3 w-3 text-muted-foreground" />}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* AI Report + Raw Scores */}
-            <Tabs defaultValue="report">
-              <TabsList>
-                <TabsTrigger value="report">AI Report</TabsTrigger>
-                <TabsTrigger value="raw">Raw Scores</TabsTrigger>
-              </TabsList>
-              <TabsContent value="report">
-                <Card>
-                  <CardContent className="p-6">
-                    {report ? (
-                      <div className="prose prose-sm max-w-none prose-headings:text-foreground prose-p:text-foreground/80" dangerouslySetInnerHTML={{ __html: markdownToHtml(report) }} />
-                    ) : (
-                      <p className="text-sm text-muted-foreground text-center py-8">No AI report generated yet.</p>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              <TabsContent value="raw">
-                <Card>
-                  <CardContent className="p-6 font-mono text-xs space-y-4">
-                    <RawRow label="Technical Match" value={technicalMatch != null ? Number(technicalMatch).toFixed(3) : "—"} />
-                    <RawRow label="Capability Match" value={capabilityMatch != null ? Number(capabilityMatch).toFixed(3) : "—"} />
-                    <RawRow label="Momentum Score" value={momentumScore != null ? Number(momentumScore).toFixed(3) : "—"} />
-                    <RawRow label="Three-Layer Score" value={candidate.full_three_layer_score != null ? Number(candidate.full_three_layer_score).toFixed(3) : "—"} />
-                    {results.cosineSimilarity != null && <RawRow label="Cosine Similarity" value={Number(results.cosineSimilarity).toFixed(3)} />}
-                    {results.jaccardBinary != null && <RawRow label="Jaccard (Binary)" value={Number(results.jaccardBinary).toFixed(3)} />}
-                    {results.jaccardWeighted != null && <RawRow label="Jaccard (Weighted)" value={Number(results.jaccardWeighted).toFixed(3)} />}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
-
-            {/* Risk Factors */}
-            {riskFactors.length > 0 && (
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                    <ShieldAlert className="h-4 w-4 text-status-amber" />Risk Factors
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {riskFactors.map((risk, i) => {
-                      const borderColor = risk.level === "HIGH" ? "border-l-destructive" : risk.level === "MEDIUM" ? "border-l-status-amber" : "border-l-primary";
-                      const badgeBg = risk.level === "HIGH" ? "bg-destructive/10 text-destructive" : risk.level === "MEDIUM" ? "bg-status-amber-light text-status-amber" : "bg-primary/10 text-primary";
-                      return (
-                        <div key={i} className={`border-l-4 ${borderColor} pl-3 py-2`}>
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-sm font-semibold">{risk.name}</span>
-                            <Badge className={`text-[10px] ${badgeBg}`}>{risk.level}</Badge>
-                          </div>
-                          <p className="text-xs text-muted-foreground">{risk.description}</p>
-                        </div>
-                      );
-                    })}
-                  </div>
+                  <div className="prose prose-sm max-w-none prose-headings:text-foreground prose-p:text-foreground/80" dangerouslySetInnerHTML={{ __html: markdownToHtml(report) }} />
                 </CardContent>
               </Card>
             )}
@@ -940,33 +587,6 @@ function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
     <div>
       <p className="text-[11px] text-muted-foreground uppercase tracking-wider">{label}</p>
       <div className="text-sm font-medium mt-0.5">{value}</div>
-    </div>
-  );
-}
-
-function MomentumRow({ label, icon, value, evidence, color }: {
-  label: string; icon: React.ReactNode; value: number; evidence?: string; color: string;
-}) {
-  return (
-    <div className="space-y-1.5">
-      <div className="flex items-center gap-2">
-        <span className="text-muted-foreground">{icon}</span>
-        <span className="text-sm font-medium flex-1">{label}</span>
-        <span className="font-mono text-sm font-semibold">{Math.round(value * 100)}%</span>
-      </div>
-      <div className="h-2 bg-secondary rounded-full overflow-hidden">
-        <div className="h-full rounded-full transition-all duration-500" style={{ width: `${value * 100}%`, backgroundColor: color }} />
-      </div>
-      {evidence && <p className="text-xs text-muted-foreground italic pl-6">{evidence}</p>}
-    </div>
-  );
-}
-
-function RawRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between py-1.5 px-2 rounded">
-      <span className="text-sm">{label}</span>
-      <span className="font-mono text-sm">{value}</span>
     </div>
   );
 }
