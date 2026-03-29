@@ -64,23 +64,38 @@ function hybridWorthinessDecision(
   const expYears = experienceProfile?.total_years || 0;
   const redFlags = experienceProfile?.red_flags?.length || 0;
 
+  // Score penalties instead of hard rejection gates
   let algoScore = partialScore;
   const algoReasons: string[] = [];
 
   if (effectiveCoverage < 0.20) {
     algoReasons.push(`Low skill coverage: ${Math.round(effectiveCoverage * 100)}%`);
-    algoScore *= 0.6;
+    algoScore *= 0.75; // Penalty, not rejection
   }
   if (expYears < 1) {
     algoReasons.push('Under 1 year experience');
-    algoScore *= 0.7;
+    algoScore *= 0.8;
   }
   if (redFlags >= 3) {
     algoReasons.push(`${redFlags} profile concerns`);
-    algoScore *= 0.75;
+    algoScore *= 0.85;
   }
 
-  const algoWorthy = algoScore >= 0.35 && algoReasons.length === 0;
+  // Minimum score floor: experienced candidates with domain-relevant skills get at least 0.20
+  if (expYears >= 3 && effectiveCoverage >= 0.40) {
+    algoScore = Math.max(algoScore, 0.20);
+  }
+
+  // High-potential override: advanced degree + experience + production impact → minimum FLAG
+  const isHighPotential =
+    (experienceProfile?.education_level === 'phd' || experienceProfile?.education_level === 'masters') &&
+    expYears >= 4 &&
+    (aiJudgment?.metrics_count >= 3 || false) &&
+    (aiJudgment?.builder_verb_ratio >= 0.5 || false) &&
+    effectiveCoverage >= 0.40;
+
+  // Algo worthy threshold - no longer requires zero reasons (reasons are informational)
+  const algoWorthy = algoScore >= 0.35;
   const aiWorthy = aiJudgment?.ai_verdict === true;
 
   // If no AI judgment available, fall back to algo-only
