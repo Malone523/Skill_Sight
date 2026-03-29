@@ -94,6 +94,8 @@ export default function EmployeeList() {
       list = list.filter((c: any) => c.submission_source === "candidate_self_submit" && c.manager_decision === "pending" && c.interview_worthy);
     } else if (extFilter === "flagged") {
       list = list.filter((c: any) => c.status === "flagged_review");
+    } else if (extFilter === "denied") {
+      list = list.filter((c: any) => c.status === "rejected" || c.manager_decision === "rejected");
     }
     if (extRoleFilter !== "all") {
       list = list.filter((c: any) => c.role_id === extRoleFilter);
