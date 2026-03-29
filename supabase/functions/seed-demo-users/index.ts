@@ -150,7 +150,7 @@ serve(async (req) => {
     }
 
     // Create Employee account (Jens Richter)
-    const jensExists = existing?.some(e => e.email === "jens.richter@bmw.de");
+    const jensExists = existing?.some(e => e.email === "jens.richter@bmw-skillsight.com");
     if (!jensExists) {
       const { data: jens } = await supabaseAdmin
         .from("employees")
@@ -160,7 +160,7 @@ serve(async (req) => {
         .single();
 
       const { data: jensUser, error: jensErr } = await supabaseAdmin.auth.admin.createUser({
-        email: "jens.richter@bmw.de",
+        email: "jens.richter@bmw-skillsight.com",
         password: "SkillSight2026!",
         email_confirm: true,
         user_metadata: { full_name: "Jens Richter" },
@@ -172,7 +172,7 @@ serve(async (req) => {
       } else if (jensUser?.user) {
         await supabaseAdmin.from("user_profiles").insert({
           id: jensUser.user.id,
-          email: "jens.richter@bmw.de",
+          email: "jens.richter@bmw-skillsight.com",
           role: "employee",
           employee_id: jens?.id || null,
           full_name: "Jens Richter",
