@@ -375,7 +375,7 @@ export default function EmployeeList() {
                   return (
                     <div
                       key={c.id}
-                      className={`card-skillsight p-5 cursor-pointer hover:shadow-skillsight-md hover:-translate-y-0.5 transition-all duration-150 ${
+                      className={`card-skillsight p-5 cursor-pointer hover:shadow-skillsight-md hover:-translate-y-0.5 transition-all duration-150 flex flex-col ${
                         isPool ? 'border-l-4' : isFlagged ? 'border-l-4 border-l-amber-500' : ''
                       }`}
                       style={isPool ? { borderLeftColor: '#f59e0b' } : undefined}
