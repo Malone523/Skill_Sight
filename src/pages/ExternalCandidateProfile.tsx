@@ -93,6 +93,7 @@ export default function ExternalCandidateProfile() {
   const [declineNote, setDeclineNote] = useState("");
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [cvModalOpen, setCvModalOpen] = useState(false);
 
   const { data: candidate, isLoading, refetch } = useQuery({
     queryKey: ["external_candidate_detail", id],
@@ -330,6 +331,11 @@ export default function ExternalCandidateProfile() {
                 <Trash2 className="h-3 w-3 mr-1" />Delete Candidate
               </Button>
             )}
+            {(candidate as any).candidate_message && (
+              <Button variant="outline" size="sm" className="text-xs" onClick={() => setCvModalOpen(true)}>
+                <FileText className="h-3 w-3 mr-1" />View Submitted CV
+              </Button>
+            )}
           </div>
         </div>
 
@@ -374,7 +380,7 @@ export default function ExternalCandidateProfile() {
                     <Icon className={`h-5 w-5 ${iconColor} mt-0.5 shrink-0`} />
                     <div>
                       <h3 className={`text-base font-bold ${titleColor}`}>
-                        {isPositive ? '✓' : isFlag ? '⚠' : '✕'} {verdictLabel} — {confLabel}
+                        {isHardReject ? verdictLabel : `${isPositive ? '✓' : isFlag ? '⚠' : '✕'} ${verdictLabel} — ${confLabel}`}
                       </h3>
                       <p className="text-xs text-muted-foreground mt-0.5">{agreementLabel}</p>
                       <div className="flex items-center gap-2 mt-1.5 flex-wrap">
@@ -658,6 +664,20 @@ export default function ExternalCandidateProfile() {
             <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
               {deleting ? "Deleting…" : "Delete Permanently"}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {/* View Submitted CV Modal */}
+      <Dialog open={cvModalOpen} onOpenChange={setCvModalOpen}>
+        <DialogContent className="max-w-[720px] max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>{candidate.name} — Submitted CV</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto rounded-md border border-border bg-muted/30 p-4">
+            <pre className="whitespace-pre-wrap text-sm font-mono leading-relaxed text-foreground">{(candidate as any).candidate_message || "No CV text available."}</pre>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCvModalOpen(false)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
