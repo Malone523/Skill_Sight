@@ -11,7 +11,7 @@ import { skillsToVector, skillsToWeights } from "@/lib/utils";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, MessageSquare, Check, Sparkles, Brain, BarChart3, FileText, Cpu, Target, Shield, Zap, Clock, ChevronLeft } from "lucide-react";
+import { ArrowRight, MessageSquare, Check, Sparkles, Brain, BarChart3, FileText, Cpu, Target, Shield, Zap, Clock, ChevronLeft, Mail } from "lucide-react";
 
 interface Message {
   role: "ai" | "user";
