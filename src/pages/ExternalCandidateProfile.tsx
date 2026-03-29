@@ -172,16 +172,19 @@ export default function ExternalCandidateProfile() {
   const score = candidate.full_three_layer_score != null ? Math.round(candidate.full_three_layer_score * 100) : null;
   const technicalMatch = results.technicalMatch;
   const capabilityMatch = results.capabilityMatch;
-  const momentumScore = results.momentumScore;
+  const momentumScore = results.momentumScore ?? results.momentumScoreVal;
   const momentumBreakdown = results.momentumBreakdown;
-  const gapAnalysis = results.gap || results.gapAnalysis;
-  const tfidfRarity = results.tfidfRarity || {};
+  const interviewCompleted = results.interviewCompleted === true || interview?.status === "completed";
+  // Use post-interview gap analysis if available
+  const gapAnalysis = results.gapAnalysis || results.gap;
+  const tfidfRarity = results.tfidfRarity || results.tfidf || {};
   const upskillingPaths = results.upskillingPaths || [];
   const transitionProfile = results.transitionProfile;
   const scoreBreakdown = results.scoreBreakdown;
   const report = results.reportMarkdown;
+  const absenceAnalysis = results.absenceAnalysis;
   const interviewSkills = (candidate.interview_skills || {}) as any;
-  const isCompleted = candidate.status === "completed";
+  const isCompleted = candidate.status === "completed" || candidate.status === "talent_pool";
   const hasAssessment = !!(hybridInfo || candidate.worthy_score != null || technicalMatch != null);
   const initials = candidate.name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
 
@@ -337,14 +340,21 @@ export default function ExternalCandidateProfile() {
                 <>
                   <ReadinessRing value={Math.round(technicalMatch * 100)} size="sm" label="Technical" />
                   <ReadinessRing value={Math.round((capabilityMatch || 0) * 100)} size="sm" label="Capability" />
-                  {isCompleted && momentumScore != null && momentumScore > 0 ? (
+                  {interviewCompleted && momentumScore != null && momentumScore > 0 ? (
                     <ReadinessRing value={Math.round(momentumScore * 100)} size="sm" label="Momentum" />
+                  ) : interviewCompleted ? (
+                    <div className="flex flex-col items-center gap-1">
+                      <div className="w-12 h-12 rounded-full border-2 border-muted-foreground/30 flex items-center justify-center bg-muted/30">
+                        <span className="text-[10px] text-muted-foreground font-medium">N/A</span>
+                      </div>
+                      <span className="text-[11px] text-muted-foreground">Momentum</span>
+                    </div>
                   ) : (
                     <div className="flex flex-col items-center gap-1">
                       <div className="w-12 h-12 rounded-full border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
                         <span className="text-[10px] text-muted-foreground">—</span>
                       </div>
-                      <span className="text-[11px] text-muted-foreground italic">Pending</span>
+                      <span className="text-[11px] text-muted-foreground italic">Interview needed</span>
                     </div>
                   )}
                 </>
@@ -575,9 +585,9 @@ export default function ExternalCandidateProfile() {
                 </Badge>
               )}
 
-              {/* Evidence Analysis — collapsed by default */}
-              {absenceAnalysis && (
-                <AbsenceAnalysisSection analysis={absenceAnalysis} />
+              {/* Evidence Analysis — prefer post-interview data */}
+              {(absenceAnalysis || hybridInfo?.absence_analysis) && (
+                <AbsenceAnalysisSection analysis={absenceAnalysis || hybridInfo.absence_analysis} />
               )}
             </>
           );
@@ -607,12 +617,20 @@ export default function ExternalCandidateProfile() {
                         <span className="text-[11px] text-muted-foreground">Problem-solving depth</span>
                         <span className="text-[11px] text-muted-foreground">& thinking patterns</span>
                       </div>
-                      {isCompleted && momentumScore != null && momentumScore > 0 ? (
+                      {interviewCompleted && momentumScore != null && momentumScore > 0 ? (
                         <div className="flex flex-col items-center">
                           <ReadinessRing value={Math.round(momentumScore * 100)} size="md" />
                           <span className="text-xs font-semibold mt-1">Momentum Score</span>
                           <span className="text-[11px] text-muted-foreground">Growth trajectory</span>
                           <span className="text-[11px] text-muted-foreground">& role motivation</span>
+                        </div>
+                      ) : interviewCompleted ? (
+                        <div className="flex flex-col items-center">
+                          <div className="w-16 h-16 rounded-full border-2 border-muted-foreground/30 flex items-center justify-center bg-muted/30">
+                            <span className="text-sm text-muted-foreground font-medium">N/A</span>
+                          </div>
+                          <span className="text-xs font-semibold mt-1">Momentum</span>
+                          <span className="text-[11px] text-muted-foreground">Insufficient data</span>
                         </div>
                       ) : (
                         <div className="flex flex-col items-center">
