@@ -236,7 +236,7 @@ type SubmitPhase = "idle" | "parsing" | "scoring" | "saving" | "done_worthy" | "
 
 export default function ApplyPage() {
   const [searchParams] = useSearchParams();
-  const { data: openRoles } = useOpenRoles();
+  const { data: openRoles } = useAllRoles();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
