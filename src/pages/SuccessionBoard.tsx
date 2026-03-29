@@ -56,7 +56,7 @@ export default function SuccessionBoard() {
             tenureYears: emp.tenure_years || 0,
           },
           targetRole: { id: role.id, title: role.title, requiredSkills: reqSkills, strategicWeights: stratWeights },
-          allRoles: roles.map(r => ({ requiredSkills: (r.required_skills || {}) as SkillVector })),
+          allRoles: roles.map(r => ({ requiredSkills: skillsToVector(r.required_skills) })),
         };
 
         const cosine = cosineSimilarity(input);
