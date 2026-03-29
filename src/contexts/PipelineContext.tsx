@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { runFullAnalysis, type AlgorithmInput, type SkillVector } from "@/lib/algorithms";
+import { skillsToVector, skillsToWeights } from "@/lib/utils";
 
 type Phase = 'idle' | 'interview_active' | 'algorithms' | 'generating_report' | 'complete' | 'error';
 
