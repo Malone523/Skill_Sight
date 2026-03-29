@@ -2,6 +2,7 @@ import { User, MessageSquare, BarChart3 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { TopBar } from "@/components/TopBar";
+import bmwLogo from "@/assets/bmw_logo.svg";
 
 const employeeNavItems = [
   { title: "My Profile", url: "/my-profile", icon: User },
