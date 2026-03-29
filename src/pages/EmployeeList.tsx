@@ -401,7 +401,6 @@ export default function EmployeeList() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <p className="text-[15px] font-bold truncate">{c.name}</p>
-                            {isSelfSubmit && <Badge variant="outline" className="text-[9px] shrink-0">Self-submitted</Badge>}
                           </div>
                           <p className="text-[13px] text-muted-foreground truncate">{role?.title || "Unknown Role"}</p>
                           <div className="mt-1">{statusBadge(c.status || "invited")}</div>
