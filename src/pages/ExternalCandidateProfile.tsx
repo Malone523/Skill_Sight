@@ -659,7 +659,7 @@ export default function ExternalCandidateProfile() {
                       <div className="flex flex-wrap gap-2">
                         {gapAnalysis.surplusSkills.map((s: any, i: number) => (
                           <Badge key={i} className="bg-status-green-light text-status-green border-status-green/20">
-                            {s.skill?.replace(/([A-Z])/g, " $1").trim()} +{s.surplus}
+                            {formatSkillName(s.skill)} +{s.surplus}
                           </Badge>
                         ))}
                       </div>
