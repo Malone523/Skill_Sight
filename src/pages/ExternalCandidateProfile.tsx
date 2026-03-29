@@ -17,7 +17,7 @@ import {
   ArrowLeft, ArrowRight, BarChart3, Shield,
   FileText, Sparkles, Mail, Eye, EyeOff, Quote, AlertTriangle,
   CheckCircle, XCircle, ChevronDown, ChevronUp, Star, Search,
-  Copy, Trash2, UserPlus, Loader2,
+  Copy, Trash2, UserPlus, Loader2, RefreshCw,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 
@@ -417,6 +417,9 @@ export default function ExternalCandidateProfile() {
                 <span className="font-mono font-bold text-sm tracking-widest">{candidate.access_code}</span>
                 <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => { navigator.clipboard.writeText(candidate.access_code!); toast.success("Code copied"); }}>
                   <Copy className="h-3 w-3" />
+                </Button>
+                <Button variant="outline" size="sm" className="text-xs h-6" onClick={handleApprove}>
+                  <RefreshCw className="h-3 w-3 mr-1" />New Code
                 </Button>
               </div>
             )}
