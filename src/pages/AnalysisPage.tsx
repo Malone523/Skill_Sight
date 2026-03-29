@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { formatSkillName } from "@/lib/utils";
+import { formatSkillName, skillsToVector, skillsToWeights } from "@/lib/utils";
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { ReadinessRing } from "@/components/ReadinessRing";
