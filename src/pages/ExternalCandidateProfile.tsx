@@ -252,11 +252,32 @@ export default function ExternalCandidateProfile() {
   };
 
   const handleToggleInterviewPassed = async (passed: boolean) => {
+    if (passed) {
+      // Open insights dialog instead of toggling directly
+      setInsightsOpen(true);
+      return;
+    }
     await supabase.from("external_candidates").update({
-      interview_passed: passed,
+      interview_passed: false,
+      manager_insights: null,
     } as any).eq("id", candidate.id);
     refetch();
-    toast.success(passed ? "Interview marked as passed" : "Interview marked as not passed");
+    toast.success("Interview marked as not passed");
+  };
+
+  const handleSubmitInsights = async () => {
+    const hasContent = Object.values(managerInsights).some(v => v.trim());
+    if (!hasContent) {
+      toast.error("Please fill in at least one insight field");
+      return;
+    }
+    await supabase.from("external_candidates").update({
+      interview_passed: true,
+      manager_insights: managerInsights,
+    } as any).eq("id", candidate.id);
+    setInsightsOpen(false);
+    refetch();
+    toast.success("Interview passed with manager insights saved");
   };
 
   const handlePromote = async () => {
