@@ -10,8 +10,10 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Clock, Shield, CheckCircle, FileText, Loader2, AlertTriangle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { runFullAnalysis, detectRoleType } from "@/lib/algorithms";
-import { skillsToVector, skillsToWeights } from "@/lib/utils";
+import { skillsToVector, skillsToWeights, parseRequiredSkills } from "@/lib/utils";
 import { hybridWorthinessDecision, type HybridResult } from "@/lib/verdictEngine";
+import { computeCvSkillVector } from "@/lib/cvCoverageScore";
+import { mapInterviewSkillsToRoleKeys } from "@/lib/interviewSkillMapping";
 
 function useAllRoles() {
   return useQuery({
