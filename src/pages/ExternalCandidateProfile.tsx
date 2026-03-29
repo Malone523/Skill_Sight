@@ -159,6 +159,7 @@ export default function ExternalCandidateProfile() {
   const report = results.reportMarkdown;
   const interviewSkills = (candidate.interview_skills || {}) as any;
   const isCompleted = candidate.status === "completed";
+  const hasAssessment = !!(hybridInfo || candidate.worthy_score != null);
   const initials = candidate.name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
 
   const sourceBadge = () => {
@@ -178,7 +179,12 @@ export default function ExternalCandidateProfile() {
       rejected: { label: "Declined", variant: "secondary" },
       flagged_review: { label: "⚠ Needs Review", variant: "outline", className: "border-amber-500 text-amber-700 bg-amber-50" },
     };
-    const s = map[candidate.status || ""] || { label: candidate.status || "Unknown", variant: "secondary" as const };
+    // Don't show "Pending" when assessment exists
+    const status = candidate.status || "";
+    if (status === "pending_manager_review" && !hasAssessment) {
+      return <Badge variant="outline" className="text-[10px]">Awaiting Assessment</Badge>;
+    }
+    const s = map[status] || { label: status || "Unknown", variant: "secondary" as const };
     return <Badge variant={s.variant} className={`text-[10px] ${s.className || ''}`}>{s.label}</Badge>;
   };
 
