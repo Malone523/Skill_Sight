@@ -65,38 +65,6 @@ export default function EmployeeList() {
   const [successionTarget, setSuccessionTarget] = useState<any>(null);
   const [successionRoleId, setSuccessionRoleId] = useState("");
 
-  // Seed state
-  const [seeding, setSeeding] = useState(false);
-  const [seedProgress, setSeedProgress] = useState<SeedProgress | null>(null);
-  const [clearing, setClearing] = useState(false);
-
-  const handleSeed = useCallback(async () => {
-    setSeeding(true);
-    setSeedProgress({ current: 0, total: 15, currentName: "", done: false, results: { strong: 0, flagged: 0, rejected: 0 } });
-    try {
-      const res = await seedDemoCandidates((p) => setSeedProgress(p));
-      toast.success(`15 candidates processed — ${res.strong} strong matches, ${res.flagged} flagged for review, ${res.rejected} hard rejected.`);
-      refetchExternal();
-    } catch (err: any) {
-      toast.error("Seeding failed: " + err.message);
-    } finally {
-      setSeeding(false);
-      setSeedProgress(null);
-    }
-  }, [refetchExternal]);
-
-  const handleClear = useCallback(async () => {
-    setClearing(true);
-    try {
-      const count = await clearDemoCandidates();
-      toast.success(`Cleared ${count} demo candidates.`);
-      refetchExternal();
-    } catch (err: any) {
-      toast.error("Clear failed: " + err.message);
-    } finally {
-      setClearing(false);
-    }
-  }, [refetchExternal]);
 
   const departments = useMemo(() => {
     if (!employees) return [];
