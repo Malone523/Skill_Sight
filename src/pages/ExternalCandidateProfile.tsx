@@ -347,7 +347,8 @@ export default function ExternalCandidateProfile() {
           const keyStrengths = hybridInfo.keyStrengths || hybridInfo.key_strengths || [];
 
           const isPositive = hybridInfo.verdict === 'recommend' || candidate.interview_worthy;
-          const isFlag = hybridInfo.verdict === 'flag' || confidence === 'mixed_signals' || confidence === 'low';
+          const isHardReject = hybridInfo.verdict === 'hard_reject';
+          const isFlag = !isHardReject && (hybridInfo.verdict === 'flag' || confidence === 'mixed_signals' || confidence === 'low');
 
           const borderClass = isPositive ? 'border-green-400 border-2' : isFlag ? 'border-amber-400 border-2' : 'border-destructive border-2';
           const iconColor = isPositive ? 'text-green-600' : isFlag ? 'text-amber-600' : 'text-destructive';
