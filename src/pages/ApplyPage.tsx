@@ -257,13 +257,11 @@ export default function ApplyPage() {
 
   const selectedRole = useMemo(() => {
     if (!openRoles || !selectedRoleId) return null;
-    const app = openRoles.find((a: any) => a.role_id === selectedRoleId);
-    return app?.roles as any;
+    return openRoles.find((r: any) => r.id === selectedRoleId) || null;
   }, [openRoles, selectedRoleId]);
 
   const allRoles = useMemo(() => {
-    if (!openRoles) return [];
-    return openRoles.map((a: any) => a.roles).filter(Boolean);
+    return openRoles || [];
   }, [openRoles]);
 
   const canSubmit = name.trim() && email.trim() && selectedRoleId && cvText.trim().length >= 50 && consent && phase === "idle";
