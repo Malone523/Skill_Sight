@@ -462,7 +462,7 @@ export default function EmployeeList() {
                       )}
 
                       {/* Actions */}
-                      <div className="flex gap-2 mt-4" onClick={e => e.stopPropagation()}>
+                      <div className="flex gap-2 mt-auto pt-4" onClick={e => e.stopPropagation()}>
                         {isPool && c.status === "talent_pool" && (
                           <>
                             <Button size="sm" className="flex-1 text-xs text-white" style={{ backgroundColor: '#f59e0b' }}
