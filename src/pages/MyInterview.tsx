@@ -241,7 +241,7 @@ export default function MyInterview() {
 
       const roleType: RoleType = targetRole
         ? detectRoleType(
-            (targetRole.required_skills || {}) as Record<string, number>,
+            skillsToVector(targetRole.required_skills),
             (targetRole.strategic_weights || {}) as Record<string, number>
           )
         : "technical_specialist";
