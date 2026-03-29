@@ -25,6 +25,7 @@ export function InviteInterviewModal({ open, onOpenChange, employee, onSent }: P
   const roles = allRoles?.filter(r => r.is_open && r.hiring_status !== "stable");
   const [roleId, setRoleId] = useState("");
   const [presetPack, setPresetPack] = useState("");
+  const [customFocus, setCustomFocus] = useState("");
   const [message, setMessage] = useState("");
   const [expiresIn, setExpiresIn] = useState("7");
   const [sending, setSending] = useState(false);
