@@ -268,6 +268,7 @@ export default function EmployeeList() {
                 { value: "all" as const, label: "All" },
                 { value: "pending" as const, label: `Pending Review${pendingCount > 0 ? ` (${pendingCount})` : ""}` },
                 { value: "flagged" as const, label: `Flagged${flaggedCount > 0 ? ` (${flaggedCount})` : ""}`, amber: true },
+                { value: "denied" as const, label: `Denied${deniedCount > 0 ? ` (${deniedCount})` : ""}`, red: true },
               ].map(f => (
                 <button
                   key={f.value}
