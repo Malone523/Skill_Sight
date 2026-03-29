@@ -82,6 +82,7 @@ const App = () => (
               {/* Manager route for external analysis */}
               <Route path="/analysis-external/:id" element={<ProtectedRoute role="manager"><AppLayout><AnalysisExternal /></AppLayout></ProtectedRoute>} />
               <Route path="/external-candidate/:id" element={<ProtectedRoute role="manager"><AppLayout><ExternalCandidateProfile /></AppLayout></ProtectedRoute>} />
+              <Route path="/bulk-review" element={<ProtectedRoute role="manager"><AppLayout><BulkReview /></AppLayout></ProtectedRoute>} />
 
               <Route path="*" element={<NotFound />} />
             </Routes>
