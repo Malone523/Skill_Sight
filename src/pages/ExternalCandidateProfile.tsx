@@ -418,6 +418,9 @@ export default function ExternalCandidateProfile() {
                 <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => { navigator.clipboard.writeText(candidate.access_code!); toast.success("Code copied"); }}>
                   <Copy className="h-3 w-3" />
                 </Button>
+                <Button variant="outline" size="sm" className="text-xs h-6" onClick={handleApprove}>
+                  <RefreshCw className="h-3 w-3 mr-1" />New Code
+                </Button>
               </div>
             )}
             {isCompleted && (
