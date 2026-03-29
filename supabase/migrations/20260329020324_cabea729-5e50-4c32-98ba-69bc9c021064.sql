@@ -1,0 +1,1 @@
+DELETE FROM external_candidates WHERE id = 'aa7f10bb-1f5b-4c6a-8e91-fc71e9693dee';
