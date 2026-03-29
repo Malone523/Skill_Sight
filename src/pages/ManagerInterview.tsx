@@ -39,6 +39,19 @@ export default function ManagerInterview() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isAiTyping]);
 
+  // Auto-fill manager info from profile and skip setup
+  const autoStartedRef = useRef(false);
+  useEffect(() => {
+    if (autoStartedRef.current || !profile || !employee || phase !== "setup") return;
+    const name = profile.full_name || "Manager";
+    const title = profile.role === "manager" ? "Senior Manager" : (profile.role || "Manager");
+    setManagerName(name);
+    setManagerTitle(title);
+    autoStartedRef.current = true;
+    // Go straight to interviewing
+    setPhase("interviewing");
+  }, [profile, employee, phase]);
+
   const MAX_QUESTIONS = 10;
 
   const sendMessage = useCallback(async (userMessage?: string) => {
