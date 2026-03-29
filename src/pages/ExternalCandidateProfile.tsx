@@ -617,12 +617,20 @@ export default function ExternalCandidateProfile() {
                         <span className="text-[11px] text-muted-foreground">Problem-solving depth</span>
                         <span className="text-[11px] text-muted-foreground">& thinking patterns</span>
                       </div>
-                      {isCompleted && momentumScore != null && momentumScore > 0 ? (
+                      {interviewCompleted && momentumScore != null && momentumScore > 0 ? (
                         <div className="flex flex-col items-center">
                           <ReadinessRing value={Math.round(momentumScore * 100)} size="md" />
                           <span className="text-xs font-semibold mt-1">Momentum Score</span>
                           <span className="text-[11px] text-muted-foreground">Growth trajectory</span>
                           <span className="text-[11px] text-muted-foreground">& role motivation</span>
+                        </div>
+                      ) : interviewCompleted ? (
+                        <div className="flex flex-col items-center">
+                          <div className="w-16 h-16 rounded-full border-2 border-muted-foreground/30 flex items-center justify-center bg-muted/30">
+                            <span className="text-sm text-muted-foreground font-medium">N/A</span>
+                          </div>
+                          <span className="text-xs font-semibold mt-1">Momentum</span>
+                          <span className="text-[11px] text-muted-foreground">Insufficient data</span>
                         </div>
                       ) : (
                         <div className="flex flex-col items-center">
