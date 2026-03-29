@@ -19,9 +19,11 @@ export default function ManagerInterview() {
   const { data: employee, isLoading } = useEmployee(id);
   const { data: roles } = useRoles();
 
+  const { profile } = useAuth();
+
   const [phase, setPhase] = useState<Phase>("setup");
-  const [managerName, setManagerName] = useState("");
-  const [managerTitle, setManagerTitle] = useState("");
+  const [managerName, setManagerName] = useState(profile?.full_name || "");
+  const [managerTitle, setManagerTitle] = useState(profile?.role === "manager" ? "Manager" : "");
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isAiTyping, setIsAiTyping] = useState(false);
