@@ -49,13 +49,15 @@ export function hybridWorthinessDecision(
   const aiConfidence = aiJudgment?.calibrated_confidence || aiJudgment?.ai_confidence || 'medium';
 
   // A. domain_signal — any relevant connection to the role domain
+  // hasMappedSkill: at least one skill from the CV maps to role requirements
   const hasMappedSkill = Object.keys(safeSkills).length > 0 &&
     Object.values(safeSkills).some((s: any) => (s?.proficiency || 0) >= 1);
-  const hasRelevantEducation = educationLevel === 'phd' || educationLevel === 'masters' || educationLevel === 'bachelors';
+  // Only PhD/Masters count as domain signal (generic BSc is too weak)
+  const hasRelevantEducation = educationLevel === 'phd' || educationLevel === 'masters';
   const hasCert = aiJudgment?.surplus_signals?.safety_certifications?.length > 0 ||
     aiJudgment?.surplus_signals?.patents?.length > 0 ||
     aiJudgment?.surplus_signals?.publications?.length > 0;
-  const hasRelevantExp = expYears >= 2 && !allInternship;
+  const hasRelevantExp = expYears >= 2 && !allInternship && hasMappedSkill;
   const domain_signal = hasMappedSkill || hasRelevantEducation || hasCert || hasRelevantExp;
 
   // B. ownership_present
