@@ -407,19 +407,6 @@ export default function EmployeeList() {
                         </div>
                       )}
 
-                      {/* Flagged: show algo vs AI side by side */}
-                      {isFlagged && hybridInfo && (
-                        <div className="mt-3 p-2 rounded-md bg-amber-50 border border-amber-200 text-xs space-y-1">
-                          <div className="flex items-center gap-1.5 text-amber-700 font-medium">
-                            <AlertTriangle className="w-3 h-3" />
-                            Conflicting Assessment
-                          </div>
-                          <div className="flex gap-3 text-[11px]">
-                            <span>Algo: <span className="font-mono font-medium">{Math.round((c.worthy_score || 0) * 100)}%</span></span>
-                            <span>AI: <span className="font-medium">{hybridInfo.method === 'flagged_ai_overrides' ? '✓ Worthy' : '✗ Concerns'}</span></span>
-                          </div>
-                        </div>
-                      )}
 
                       {/* Score */}
                       {!isFlagged && !isPool && (

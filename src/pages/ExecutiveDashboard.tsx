@@ -146,7 +146,7 @@ export default function ExecutiveDashboard() {
           <StatCard icon={MessageSquare} label="Interviews Completed" value={completedInterviews} subtitle="Employee + manager combined" color="blue" />
           <StatCard icon={UserPlus} label="External Pipeline" value={externalWorthyCount} subtitle="Interview-worthy candidates" color="purple" />
           <StatCard icon={Inbox} label="Pending Review" value={pendingReviewCount} subtitle="Self-submitted, AI-cleared" color="amber" />
-          <StatCard icon={AlertTriangle} label="Flagged for Review" value={flaggedReviewCount} subtitle="Conflicting AI and algorithm signals" color="amber" />
+          <StatCard icon={AlertTriangle} label="Flagged for Review" value={flaggedReviewCount} subtitle="Mixed signals — needs manager review" color="amber" />
         </div>
 
         {/* Main content row — stretch aligned */}
