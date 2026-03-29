@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRoles } from "@/hooks/useData";
 import { toast } from "@/hooks/use-toast";
-import { Mail, Info, Clock } from "lucide-react";
+import { Mail, Info, Clock, PenLine } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface Props {
