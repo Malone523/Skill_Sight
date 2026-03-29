@@ -180,12 +180,8 @@ If the manager noted concerns, factor those into lower scores where appropriate.
       await supabase.from("employee_skills").insert(skillRows);
     }
 
-    // Update external candidate status to promoted
-    await supabase.from("external_candidates").update({
-      status: "promoted",
-      manager_decision: "promoted",
-      manager_decision_at: new Date().toISOString(),
-    } as any).eq("id", candidateId);
+    // Delete the external candidate record after promotion
+    await supabase.from("external_candidates").delete().eq("id", candidateId);
 
     return new Response(JSON.stringify({
       success: true,
