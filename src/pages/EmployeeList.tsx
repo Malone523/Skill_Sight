@@ -438,19 +438,6 @@ export default function EmployeeList() {
                         </div>
                       )}
 
-                      {/* Code section */}
-                      {c.status === "invited" && c.access_code && (
-                        <div className="mt-3 p-2 rounded-md bg-secondary text-xs space-y-1">
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Code: <span className="font-mono font-medium">{codeDisplay}</span></span>
-                            {c.code_expires_at && (
-                              <span className={isExpiringSoon ? "text-yellow-600 font-medium" : "text-muted-foreground"}>
-                                Expires {new Date(c.code_expires_at).toLocaleDateString()}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      )}
 
                       {/* Actions */}
                       <div className="flex gap-2 mt-auto pt-4" onClick={e => e.stopPropagation()}>
