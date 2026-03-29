@@ -37,9 +37,11 @@ export default function SuccessionBoard() {
     if (!employees || !allSkills || !roles) return [];
 
     return roles.filter(r => r.is_open).map(role => {
-      const reqSkills = (role.required_skills || {}) as SkillVector;
-      const stratWeights = (role.strategic_weights || {}) as SkillVector;
-      const roleType: RoleType = detectRoleType(reqSkills as Record<string, number>, stratWeights as Record<string, number>);
+      const reqSkills = skillsToVector(role.required_skills);
+      const stratWeights = skillsToWeights(role.required_skills);
+      // Merge explicit strategic_weights for role_type detection
+      const swMerged = { ...stratWeights, ...((role.strategic_weights || {}) as Record<string, any>) };
+      const roleType: RoleType = detectRoleType(reqSkills as Record<string, number>, swMerged as Record<string, number>);
 
       // Internal candidates
       const internalCandidates = employees.map(emp => {
