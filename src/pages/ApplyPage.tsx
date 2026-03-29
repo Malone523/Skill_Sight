@@ -384,7 +384,9 @@ export default function ApplyPage() {
 
       // Determine status
       let candidateStatus: string;
-      if (hybrid.verdict === 'flag') {
+      if (hybrid.verdict === 'hard_reject') {
+        candidateStatus = 'below_threshold';
+      } else if (hybrid.verdict === 'flag') {
         candidateStatus = 'flagged_review';
       } else if (hybrid.worthy) {
         candidateStatus = 'pending_manager_review';
