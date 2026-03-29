@@ -254,11 +254,19 @@ export default function ManagerInterview() {
 
         {phase === "setup" && (
           <div className="card-skillsight p-4 space-y-3">
-            <label className="text-xs font-medium">Manager Name *</label>
-            <Input value={managerName} onChange={e => setManagerName(e.target.value)} placeholder="Your name" className="h-9 text-sm" />
-            <label className="text-xs font-medium">Manager Title *</label>
-            <Input value={managerTitle} onChange={e => setManagerTitle(e.target.value)} placeholder="Your title" className="h-9 text-sm" />
-            <Button onClick={beginInterview} disabled={!managerName.trim() || !managerTitle.trim()} className="w-full">Begin Conversation</Button>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-bold">
+                {(profile?.full_name || "M").split(" ").map(n => n[0]).join("").slice(0, 2)}
+              </div>
+              <div>
+                <p className="text-sm font-semibold">{profile?.full_name || "Manager"}</p>
+                <p className="text-xs text-muted-foreground">{profile?.role === "manager" ? "Senior Manager" : "Manager"}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <LoadingSpinner variant="inline" />
+              <span>Starting conversation...</span>
+            </div>
           </div>
         )}
 
