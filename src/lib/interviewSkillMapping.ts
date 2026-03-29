@@ -8,9 +8,10 @@
 const INTERVIEW_TO_ROLE: Record<string, string[]> = {
   // ADAS / Embedded
   CppLanguage: ["C++ / Embedded Systems"],
-  EmbeddedSystems: ["C++ / Embedded Systems"],
+  EmbeddedSystems: ["C++ / Embedded Systems", "Real-Time Systems"],
   SensorFusion: ["Sensor Fusion"],
   ComputerVision: ["Computer Vision / Perception"],
+  RealTimeSystems: ["Real-Time Systems"],
   ROS: ["ROS / ROS2"],
   DeepLearning: ["Deep Learning"],
   MachineLearning: ["Deep Learning", "Machine Learning / Deep Learning"],
