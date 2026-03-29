@@ -386,13 +386,6 @@ export default function EmployeeList() {
                       style={isPool ? { borderLeftColor: '#f59e0b' } : undefined}
                       onClick={() => navigate(`/external-candidate/${c.id}`)}
                     >
-                      {/* Talent pool banner */}
-                      {isPool && (
-                        <div className="flex items-center gap-1.5 text-xs font-semibold mb-3 px-2 py-1 rounded-md" style={{ backgroundColor: '#fef3c7', color: '#92400e' }}>
-                          <Award className="h-3.5 w-3.5" />
-                          Talent Pool — Interview Verified
-                        </div>
-                      )}
 
                       <div className="flex items-start gap-3">
                         <div className="w-11 h-11 rounded-full bg-purple-500 flex items-center justify-center text-sm font-bold text-primary-foreground shrink-0">
