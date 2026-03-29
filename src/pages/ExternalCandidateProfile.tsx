@@ -503,145 +503,17 @@ function ExpandableSection({ label, children }: { label: string; children: React
               </div>
             )}
 
-            {/* Momentum Assessment */}
-            {momentumBreakdown && momentumBreakdown.momentum_score != null && (
+            {/* AI Report */}
+            {report && (
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                    <Zap className="h-4 w-4 text-primary" />Momentum Assessment
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <MomentumRow label="Learning Velocity" icon={<Brain className="h-3.5 w-3.5" />}
-                    value={momentumBreakdown.learning_velocity || 0}
-                    evidence={momentumBreakdown.learning_velocity_evidence}
-                    color="hsl(var(--primary))" />
-                  <MomentumRow label="Scope Trajectory" icon={<TrendingUp className="h-3.5 w-3.5" />}
-                    value={momentumBreakdown.scope_trajectory || 0}
-                    evidence={momentumBreakdown.scope_trajectory_evidence}
-                    color="hsl(142 76% 36%)" />
-                  <MomentumRow label="Motivation Alignment" icon={<Heart className="h-3.5 w-3.5" />}
-                    value={momentumBreakdown.motivation_alignment || 0}
-                    evidence={momentumBreakdown.motivation_alignment_evidence}
-                    color="hsl(270 60% 55%)" />
-                  {momentumBreakdown.momentum_narrative && (
-                    <div className="border-l-4 border-primary/40 bg-primary/5 rounded-r-lg p-4">
-                      <p className="text-sm italic text-foreground/80">{momentumBreakdown.momentum_narrative}</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Transition Profile */}
-            {transitionProfile?.is_transitioning && (
-              <Card className="border-primary/30 bg-primary/5">
-                <CardContent className="p-4 flex items-start gap-3">
-                  <TrendingUp className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="text-sm font-semibold">
-                      Active Transition Profile — {transitionProfile.transition_stage === "mid" ? "Mid-Transition" : transitionProfile.transition_stage === "late" ? "Late-Stage" : "Early Transition"}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{transitionProfile.maturity_note}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Upskilling Paths */}
-            {upskillingPaths.length > 0 && (
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                    <Route className="h-4 w-4 text-primary" />Learning Pathways
-                  </CardTitle>
+                  <CardTitle className="text-sm font-semibold">AI Report</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {upskillingPaths.map((path: any, i: number) => (
-                      <div key={i}>
-                        <div className="flex items-center gap-2 mb-2">
-                          <Badge variant="outline" className="text-xs">{path.targetSkill?.replace(/([A-Z])/g, " $1").trim()}</Badge>
-                          <span className="text-[11px] text-muted-foreground font-mono">{path.totalWeeks} weeks</span>
-                        </div>
-                        <div className="flex items-center gap-1 flex-wrap">
-                          {path.path?.map((node: string, j: number) => (
-                            <div key={j} className="flex items-center gap-1">
-                              <span className="px-2 py-0.5 text-xs rounded-md bg-primary/10 text-primary font-medium">
-                                {node.replace(/([A-Z])/g, " $1").trim()}
-                              </span>
-                              {j < path.path.length - 1 && <ArrowRight className="h-3 w-3 text-muted-foreground" />}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                  <div className="prose prose-sm max-w-none prose-headings:text-foreground prose-p:text-foreground/80" dangerouslySetInnerHTML={{ __html: markdownToHtml(report) }} />
                 </CardContent>
               </Card>
             )}
-
-            {/* AI Report + Raw Scores */}
-            <Tabs defaultValue="report">
-              <TabsList>
-                <TabsTrigger value="report">AI Report</TabsTrigger>
-                <TabsTrigger value="raw">Raw Scores</TabsTrigger>
-              </TabsList>
-              <TabsContent value="report">
-                <Card>
-                  <CardContent className="p-6">
-                    {report ? (
-                      <div className="prose prose-sm max-w-none prose-headings:text-foreground prose-p:text-foreground/80" dangerouslySetInnerHTML={{ __html: markdownToHtml(report) }} />
-                    ) : (
-                      <p className="text-sm text-muted-foreground text-center py-8">No AI report generated yet.</p>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              <TabsContent value="raw">
-                <Card>
-                  <CardContent className="p-6 font-mono text-xs space-y-4">
-                    <RawRow label="Technical Match" value={technicalMatch != null ? Number(technicalMatch).toFixed(3) : "—"} />
-                    <RawRow label="Capability Match" value={capabilityMatch != null ? Number(capabilityMatch).toFixed(3) : "—"} />
-                    <RawRow label="Momentum Score" value={momentumScore != null ? Number(momentumScore).toFixed(3) : "—"} />
-                    <RawRow label="Three-Layer Score" value={candidate.full_three_layer_score != null ? Number(candidate.full_three_layer_score).toFixed(3) : "—"} />
-                    {results.cosineSimilarity != null && <RawRow label="Cosine Similarity" value={Number(results.cosineSimilarity).toFixed(3)} />}
-                    {results.jaccardBinary != null && <RawRow label="Jaccard (Binary)" value={Number(results.jaccardBinary).toFixed(3)} />}
-                    {results.jaccardWeighted != null && <RawRow label="Jaccard (Weighted)" value={Number(results.jaccardWeighted).toFixed(3)} />}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
-
-            {/* Risk Factors */}
-            {riskFactors.length > 0 && (
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                    <ShieldAlert className="h-4 w-4 text-status-amber" />Risk Factors
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {riskFactors.map((risk, i) => {
-                      const borderColor = risk.level === "HIGH" ? "border-l-destructive" : risk.level === "MEDIUM" ? "border-l-status-amber" : "border-l-primary";
-                      const badgeBg = risk.level === "HIGH" ? "bg-destructive/10 text-destructive" : risk.level === "MEDIUM" ? "bg-status-amber-light text-status-amber" : "bg-primary/10 text-primary";
-                      return (
-                        <div key={i} className={`border-l-4 ${borderColor} pl-3 py-2`}>
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-sm font-semibold">{risk.name}</span>
-                            <Badge className={`text-[10px] ${badgeBg}`}>{risk.level}</Badge>
-                          </div>
-                          <p className="text-xs text-muted-foreground">{risk.description}</p>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </>
-        )}
 
         {/* Section 6 — Interview Transcript (collapsible) */}
         {conversationHistory.length > 0 && (
