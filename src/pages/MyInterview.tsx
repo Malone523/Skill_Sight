@@ -44,6 +44,7 @@ export default function MyInterview() {
   const [started, setStarted] = useState(false);
   const [pipelinePhase, setPipelinePhase] = useState<PipelinePhase>("idle");
   const [algoStep, setAlgoStep] = useState(0);
+  const [viewingPastInterview, setViewingPastInterview] = useState<string | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const displayedQuestionNumber = Math.min(Math.max(questionsAsked, 1), 12);
 
