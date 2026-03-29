@@ -102,11 +102,9 @@ export default function ExternalCandidateProfile() {
   const [promoting, setPromoting] = useState(false);
   const [insightsOpen, setInsightsOpen] = useState(false);
   const [managerInsights, setManagerInsights] = useState({
-    culturalFit: "",
-    communicationStyle: "",
-    leadershipPotential: "",
-    technicalDepth: "",
-    concernsOrRisks: "",
+    strengths: "",
+    concerns: "",
+    goodFit: true,
   });
 
   const { data: candidate, isLoading, refetch } = useQuery({
