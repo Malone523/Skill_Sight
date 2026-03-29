@@ -366,10 +366,10 @@ export default function ApplyPage() {
         targetRole: {
           id: selectedRoleId!,
           title: selectedRole.title,
-          requiredSkills: (selectedRole.required_skills || {}) as Record<string, number>,
-          strategicWeights: (selectedRole.strategic_weights || {}) as Record<string, number>,
+          requiredSkills: skillsToVector(selectedRole.required_skills),
+          strategicWeights: skillsToWeights(selectedRole.required_skills),
         },
-        allRoles: allRoles.map((r: any) => ({ requiredSkills: r.required_skills || {} })),
+        allRoles: allRoles.map((r: any) => ({ requiredSkills: skillsToVector(r.required_skills) })),
       };
 
       const results = runFullAnalysis(algorithmInput);

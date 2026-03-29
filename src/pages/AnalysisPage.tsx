@@ -118,7 +118,7 @@ export default function AnalysisPage() {
 
   const radarData = useMemo(() => {
     if (!targetRole?.required_skills || !skills) return [];
-    const reqSkills = targetRole.required_skills as Record<string, number>;
+    const reqSkills = skillsToVector(targetRole.required_skills);
     return Object.entries(reqSkills).map(([skill, required]) => {
       const empSkill = skills.find(s => s.skill_name === skill);
       return { skill: formatSkillName(skill), employee: empSkill?.proficiency || 0, required };

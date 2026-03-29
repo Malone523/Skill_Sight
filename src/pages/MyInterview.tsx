@@ -327,10 +327,10 @@ export default function MyInterview() {
         targetRole: {
           id: targetRole.id,
           title: targetRole.title,
-          requiredSkills: (targetRole.required_skills || {}) as SkillVector,
-          strategicWeights: (targetRole.strategic_weights || {}) as SkillVector,
+          requiredSkills: skillsToVector(targetRole.required_skills),
+          strategicWeights: skillsToWeights(targetRole.required_skills),
         },
-        allRoles: allRoles?.map(r => ({ requiredSkills: (r.required_skills || {}) as SkillVector })),
+        allRoles: allRoles?.map(r => ({ requiredSkills: skillsToVector(r.required_skills) })),
       };
 
       // Animate algorithm steps
