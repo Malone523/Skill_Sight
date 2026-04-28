@@ -4,7 +4,7 @@
 
    Track 1: BMW — AI for People & Leadership Strategy
 
-   Built in 72 hours by Constructor University Bremen
+   Built in 72 hours at Constructor University Bremen
 
 ---
 
